@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, ScrollView } from 'react-native'
 import { getApiBaseUrl } from '../utils/config'
 
 export default function HomeScreen({ navigation }) {
@@ -28,6 +29,7 @@ export default function HomeScreen({ navigation }) {
 	)
 
 	return (
+		<SafeAreaView >
 		<View className="flex-1 bg-white">
 			<FlatList
 				data={products}
@@ -46,6 +48,7 @@ export default function HomeScreen({ navigation }) {
 				)}
 			/>
 		</View>
+		</SafeAreaView>
 	)
 }
 

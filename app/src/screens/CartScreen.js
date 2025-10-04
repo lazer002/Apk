@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native'
 import { getApiBaseUrl } from '../utils/config'
 import { getToken } from '../utils/token'
@@ -20,6 +21,7 @@ export default function CartScreen({ route, navigation }) {
 	}, [])
 
 	return (
+		<SafeAreaView>
 		<View className="flex-1 bg-white">
 			<FlatList
 				data={items}
@@ -38,6 +40,7 @@ export default function CartScreen({ route, navigation }) {
 				<Text className="text-center text-white font-semibold">Proceed to Checkout</Text>
 			</TouchableOpacity>
 		</View>
+		</SafeAreaView>
 	)
 }
 
