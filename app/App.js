@@ -1,18 +1,18 @@
-// App.js
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-
+import "./global.css"
+import SplashScreen from './src/screens/SplashScreen';
+import AuthScreen from './src/screens/AuthScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CategoriesScreen from './src/screens/CategoriesScreen';
 import ProductScreen from './src/screens/ProductScreen';
 import CartScreen from './src/screens/CartScreen';
 import CheckoutScreen from './src/screens/CheckoutScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
-import AuthScreen from './src/screens/AuthScreen';
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -21,7 +21,6 @@ function TabsNavigator() {
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
-        
         headerShown: false,
         tabBarActiveTintColor: '#FF6347',
         tabBarInactiveTintColor: 'gray',
@@ -59,10 +58,18 @@ export default function App() {
     <NavigationContainer>
       <StatusBar style="dark" />
       <Stack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
+        {/* 👇 SplashScreen first */}
+        <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+
+        {/* 👇 Auth Screen (Phone + OTP) */}
+        <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
+
+        {/* 👇 Main Tabs */}
         <Stack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
+
+        {/* 👇 Other Screens */}
         <Stack.Screen name="Product" component={ProductScreen} options={{ title: 'Product Details' }} />
         <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
-        <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Sign In / Sign Up' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
