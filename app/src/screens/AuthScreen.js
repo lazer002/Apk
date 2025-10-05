@@ -1,14 +1,34 @@
 import React, { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet,Alert } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { api } from '../utils/config';
+
 
 export default function AuthScreen({ navigation }) {
   const [email, setEmail] = useState('')
   const [isFocused, setIsFocused] = useState(false) // track focus
+   const [loading, setLoading] = useState(false)
 
-  const handleContinue = () => {
-    if (!email) return alert('Please enter your email')
-    navigation.navigate('OtpVerification', { email })
+  const handleContinue = async () => {
+   
+    if (!email) return Alert.alert('Error', 'Please enter your email')
+
+    try {
+      setLoading(true)
+      const res = await api.post(`/api/auth/otp/send`, { email })
+
+      if (res.status === 200) {
+        Alert.alert('OTP Sent', 'Check your email for the OTP')
+        navigation.navigate('OtpVerification', { email })
+      } else {
+        Alert.alert('Error', res.data?.error || 'Failed to send OTP')
+      }
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.error || 'Something went wrong. Try again.')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogleLogin = () => {

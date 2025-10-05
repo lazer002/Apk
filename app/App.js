@@ -13,6 +13,8 @@ import ProductScreen from './src/screens/ProductScreen';
 import CartScreen from './src/screens/CartScreen';
 import CheckoutScreen from './src/screens/CheckoutScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import OtpVerification from './src/screens/OtpVerification';
+import { AuthProvider } from './src/context/AuthContext';
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -55,6 +57,7 @@ function TabsNavigator() {
 
 export default function App() {
   return (
+    <AuthProvider>
     <NavigationContainer>
       <StatusBar style="dark" />
       <Stack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
@@ -66,11 +69,14 @@ export default function App() {
 
         {/* 👇 Main Tabs */}
         <Stack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
+        <Stack.Screen name="OtpVerification" component={OtpVerification} options={{ headerShown: false }} />
+
 
         {/* 👇 Other Screens */}
         <Stack.Screen name="Product" component={ProductScreen} options={{ title: 'Product Details' }} />
         <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
       </Stack.Navigator>
     </NavigationContainer>
+    </AuthProvider>
   );
 }

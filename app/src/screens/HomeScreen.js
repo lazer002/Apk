@@ -10,7 +10,7 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { getApiBaseUrl } from '../utils/config';
+import { api } from '../utils/config';
 
 const categories = [
   { id: 1, name: 'T-Shirts', image: 'https://via.placeholder.com/100x100?text=TShirt' },
@@ -27,9 +27,8 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${getApiBaseUrl()}/api/products`);
-        const data = await res.json();
-        setProducts(data);
+        const res = await api.post(`/api/products`);
+        setProducts(res.data);
       } catch (e) {
         console.error(e);
       } finally {

@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
   {
     // Authentication
     email: { type: String, lowercase: true, unique: true, sparse: true }, // sparse: optional
-    phone: { type: String, unique: true, required: true, index: true }, // mandatory for mobile login
+    phone: { type: String, unique: true,  index: true }, // mandatory for mobile login
     passwordHash: { type: String }, // optional if phone + OTP login
 
     // Profile
