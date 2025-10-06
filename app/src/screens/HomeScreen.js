@@ -1,211 +1,357 @@
-import { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
   ScrollView,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  FlatList,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '../utils/config';
 
-const categories = [
-  { id: 1, name: 'T-Shirts', image: 'https://via.placeholder.com/100x100?text=TShirt' },
-  { id: 2, name: 'Jeans', image: 'https://via.placeholder.com/100x100?text=Jeans' },
-  { id: 3, name: 'Jackets', image: 'https://via.placeholder.com/100x100?text=Jacket' },
-  { id: 4, name: 'Shoes', image: 'https://via.placeholder.com/100x100?text=Shoes' },
-  { id: 5, name: 'Accessories', image: 'https://via.placeholder.com/100x100?text=Cap' },
-];
-
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen() {
+  const [selectedCategory, setSelectedCategory] = useState('Chairs');
+  const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get('/api/public/categories');
+      setCategories(Array.isArray(res.data.categories) ? res.data.categories : []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setCategories([]);
+    }
+  };
+
+  // Fetch products
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/api/products');
+      const productsArray = Array.isArray(res.data.items) ? res.data.items : [];
+      setProducts(productsArray);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await api.post(`/api/products`);
-        setProducts(res.data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    fetchCategories();
+    fetchProducts();
   }, []);
 
-  if (loading)
+  // Filter products by category and search
+  const filteredProducts = products.filter(
+    (p) =>
+      p.category.toLowerCase() === selectedCategory.toLowerCase() &&
+      p.title.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  const newArrivals = products.filter((p) => p.isNewProduct);
+  const bestSellers = products.slice(0, 5); // example: top 5 products
+
+  if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#FF6347" />
-        <Text style={{ marginTop: 10 }}>Loading products...</Text>
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#1F2937" />
       </View>
     );
+  }
+
+  const handleAddToCart = (item) => {
+    Alert.alert('Added to Cart', `${item.title} has been added to your cart!`);
+  };
+
+
+  const trendingProducts = products.slice(0, 5); // example
+const topRatedProducts = products
+  .filter(p => p.rating)
+  .sort((a, b) => b.rating - a.rating)
+  .slice(0, 5);
+const discountedProducts = products.filter(p => p.onSale);
+const featuredCollections = categories.slice(0, 5); 
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* 🔥 Hero Banner */}
-        <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>Fashion Sale</Text>
-          <Text style={styles.bannerSubtitle}>Up to 50% OFF on New Collection</Text>
-        </View>
+    <ScrollView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Discover the Best Furniture</Text>
+        <Image source={{ uri: 'https://i.pravatar.cc/100' }} style={styles.avatar} />
+      </View>
 
-        {/* 🔥 Categories */}
-        <View style={{ marginTop: 16 }}>
-          <Text style={styles.sectionTitle}>Shop by Category</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
-            {categories.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={styles.catCard}
-                onPress={() => alert(`Show ${cat.name} products`)}
-              >
-                <Image source={{ uri: cat.image }} style={styles.catImage} />
-                <Text style={styles.catText}>{cat.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+      {/* Search Bar */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={20} color="gray" />
+        <TextInput
+          placeholder="Search for furniture"
+          style={styles.searchInput}
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+        <TouchableOpacity>
+          <Ionicons name="options-outline" size={20} color="gray" />
+        </TouchableOpacity>
+      </View>
 
-        {/* 🔥 Popular Products */}
-        <View style={{ marginTop: 20 }}>
-          <Text style={styles.sectionTitle}>Popular Products</Text>
-          <FlatList
-            data={products.slice(0, 4)}
-            keyExtractor={(item) => String(item._id)}
-            numColumns={2}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
-            scrollEnabled={false}
-            contentContainerStyle={{ paddingVertical: 10 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.productCard}
-                onPress={() => navigation.navigate('Product', { id: item._id })}
-              >
-                <Image
-                  source={{ uri: item.images?.[0] }}
-                  style={styles.productImage}
-                  resizeMode="cover"
-                />
-                <Text style={styles.productName} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.productPrice}>₹{item.price}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-
-        {/* 🔥 Deals of the Day */}
-        <View style={{ marginTop: 20 }}>
-          <Text style={styles.sectionTitle}>Deals of the Day</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {products.slice(4, 8).map((item) => (
-              <TouchableOpacity
-                key={item._id}
-                style={styles.dealCard}
-                onPress={() => navigation.navigate('Product', { id: item._id })}
-              >
-                <Image source={{ uri: item.images?.[0] }} style={styles.dealImage} />
-                <Text style={styles.dealName} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.dealPrice}>₹{item.price}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* 🔥 Trending Now */}
-        <View style={{ marginTop: 20 }}>
-          <Text style={styles.sectionTitle}>Trending Now</Text>
-          <FlatList
-            data={products.slice(8, 12)}
-            keyExtractor={(item) => String(item._id)}
-            numColumns={2}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
-            scrollEnabled={false}
-            contentContainerStyle={{ paddingVertical: 10 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.productCard}
-                onPress={() => navigation.navigate('Product', { id: item._id })}
-              >
-                <Image source={{ uri: item.images?.[0] }} style={styles.productImage} />
-                <Text style={styles.productName} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.productPrice}>₹{item.price}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-
-        {/* 🔥 Recommended */}
-        <View style={{ marginTop: 20, marginBottom: 30 }}>
-          <Text style={styles.sectionTitle}>Recommended For You</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {products.slice(12, 16).map((item) => (
-              <TouchableOpacity
-                key={item._id}
-                style={styles.recommendCard}
-                onPress={() => navigation.navigate('Product', { id: item._id })}
-              >
-                <Image source={{ uri: item.images?.[0] }} style={styles.recommendImage} />
-                <Text style={styles.recommendName} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.recommendPrice}>₹{item.price}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+      {/* Categories */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
+        {categories.map((cat) => (
+          <TouchableOpacity
+            key={cat._id}
+            style={[
+              styles.categoryBtn,
+              selectedCategory === cat.name ? styles.categoryBtnActive : styles.categoryBtnInactive,
+            ]}
+            onPress={() => setSelectedCategory(cat.name)}
+          >
+            <Text
+              style={selectedCategory === cat.name ? styles.categoryTextActive : styles.categoryTextInactive}
+            >
+              {cat.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Filtered Products */}
+      <Text style={styles.sectionTitle}>{selectedCategory} Products</Text>
+      <FlatList
+        data={filteredProducts}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item._id}
+        style={{ marginBottom: 20 }}
+        renderItem={({ item }) => (
+          <View style={styles.productCard}>
+            <Image
+              source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }}
+              style={styles.productImage}
+            />
+            {item.isNewProduct && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>NEW</Text>
+              </View>
+            )}
+            {item.onSale && (
+              <View style={[styles.badge, { backgroundColor: '#10B981', top: 30 }]}>
+                <Text style={styles.badgeText}>SALE</Text>
+              </View>
+            )}
+            <Text style={styles.productName}>{item.title}</Text>
+            <Text style={styles.productSub} numberOfLines={2}>
+              {item.description || 'No description'}
+            </Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.price}>${item.price}</Text>
+              <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
+                <Ionicons name="add" size={16} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      />
+
+      {/* New Arrivals */}
+      {newArrivals.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>New Arrivals</Text>
+          <FlatList
+            data={newArrivals}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => 'na-' + item._id}
+            renderItem={({ item }) => (
+              <View style={styles.productCard}>
+                <Image
+                  source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }}
+                  style={styles.productImage}
+                />
+                <Text style={styles.productName}>{item.title}</Text>
+                <Text style={styles.productSub} numberOfLines={2}>
+                  {item.description || 'No description'}
+                </Text>
+                <View style={styles.priceRow}>
+                  <Text style={styles.price}>${item.price}</Text>
+                  <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
+                    <Ionicons name="add" size={16} color="white" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          />
+        </>
+      )}
+
+      {/* Best Sellers */}
+      <Text style={styles.sectionTitle}>Best Sellers</Text>
+      <FlatList
+        data={bestSellers}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => 'bs-' + item._id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.bestSellerCard}>
+            <Image
+              source={{ uri: item.images[0] || 'https://via.placeholder.com/80' }}
+              style={styles.bestSellerImage}
+            />
+            <View style={styles.bestSellerInfo}>
+              <Text style={styles.bestSellerName}>{item.title}</Text>
+              <Text style={styles.bestSellerSub} numberOfLines={1}>
+                {item.description || 'No description'}
+              </Text>
+              <Text style={styles.bestSellerPrice}>${item.price}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+
+
+
+	  {trendingProducts.length > 0 && (
+  <>
+    <Text style={styles.sectionTitle}>Trending Now</Text>
+    <FlatList
+      data={trendingProducts}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyExtractor={item => 'tr-' + item._id}
+      renderItem={({ item }) => (
+        <View style={styles.productCard}>
+          <Image source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }} style={styles.productImage} />
+          <Text style={styles.productName}>{item.title}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>${item.price}</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
+              <Ionicons name="add" size={16} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    />
+  </>
+)}
+
+{/* Top Rated */}
+{topRatedProducts.length > 0 && (
+  <>
+    <Text style={styles.sectionTitle}>Top Rated</Text>
+    <FlatList
+      data={topRatedProducts}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyExtractor={item => 'tp-' + item._id}
+      renderItem={({ item }) => (
+        <View style={styles.productCard}>
+          <Image source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }} style={styles.productImage} />
+          <Text style={styles.productName}>{item.title}</Text>
+          <Text style={styles.productSub}>{item.rating} ⭐</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>${item.price}</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
+              <Ionicons name="add" size={16} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    />
+  </>
+)}
+
+{/* On Sale */}
+{discountedProducts.length > 0 && (
+  <>
+    <Text style={styles.sectionTitle}>On Sale</Text>
+    <FlatList
+      data={discountedProducts}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyExtractor={item => 'ds-' + item._id}
+      renderItem={({ item }) => (
+        <View style={styles.productCard}>
+          <Image source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }} style={styles.productImage} />
+          <View style={[styles.badge, { backgroundColor: '#10B981', top: 30 }]}>
+            <Text style={styles.badgeText}>SALE</Text>
+          </View>
+          <Text style={styles.productName}>{item.title}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>${item.price}</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
+              <Ionicons name="add" size={16} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    />
+  </>
+)}
+
+{/* Featured Collections */}
+{featuredCollections.length > 0 && (
+  <>
+    <Text style={styles.sectionTitle}>Featured Collections</Text>
+    <FlatList
+      data={featuredCollections}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyExtractor={item => 'fc-' + item._id}
+      renderItem={({ item }) => (
+        <TouchableOpacity style={styles.featuredCard}>
+          <Image source={{ uri: item.image || 'https://via.placeholder.com/120' }} style={styles.featuredImage} />
+          <Text style={styles.featuredName}>{item.name}</Text>
+        </TouchableOpacity>
+      )}
+    />
+  </>
+)}
+    </ScrollView>
   );
 }
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  banner: {
-    backgroundColor: '#FF6347',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  bannerTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
-  bannerSubtitle: { fontSize: 14, color: '#fff', marginTop: 5 },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
-  catCard: { alignItems: 'center', marginRight: 16 },
-  catImage: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#eee' },
-  catText: { marginTop: 5, fontSize: 12, fontWeight: '500' },
-  productCard: {
-    width: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
-    padding: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  productImage: { width: '100%', height: 150, borderRadius: 10, backgroundColor: '#eee' },
-  productName: { fontSize: 14, fontWeight: '600', marginTop: 8 },
-  productPrice: { fontSize: 14, fontWeight: 'bold', color: '#FF6347', marginTop: 4 },
-  dealCard: { width: 140, marginRight: 12 },
-  dealImage: { width: '100%', height: 120, borderRadius: 10, backgroundColor: '#eee' },
-  dealName: { fontSize: 13, fontWeight: '500', marginTop: 6 },
-  dealPrice: { fontSize: 14, fontWeight: 'bold', color: '#FF6347' },
-  recommendCard: { width: 120, marginRight: 12 },
-  recommendImage: { width: '100%', height: 100, borderRadius: 10, backgroundColor: '#eee' },
-  recommendName: { fontSize: 12, marginTop: 4 },
-  recommendPrice: { fontSize: 13, fontWeight: 'bold', color: '#FF6347' },
+  container: { flex: 1, backgroundColor: 'white', padding: 16 },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  headerText: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
+  avatar: { width: 40, height: 40, borderRadius: 20 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 16 },
+  searchInput: { flex: 1, marginLeft: 8 },
+  categories: { marginBottom: 16 },
+  categoryBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8 },
+  categoryBtnActive: { backgroundColor: '#1F2937' },
+  categoryBtnInactive: { backgroundColor: '#E5E7EB' },
+  categoryTextActive: { color: 'white', fontWeight: '600' },
+  categoryTextInactive: { color: '#1F2937', fontWeight: '600' },
+  productCard: { width: 160, backgroundColor: '#F9FAFB', borderRadius: 16, marginRight: 16, padding: 8 },
+  productImage: { width: '100%', height: 128, borderRadius: 16 },
+  badge: { position: 'absolute', top: 8, left: 8, backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  badgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
+  productName: { fontSize: 14, fontWeight: '600', marginTop: 4 },
+  productSub: { fontSize: 12, color: '#6B7280' },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  price: { fontSize: 14, fontWeight: 'bold', color: '#1F2937' },
+  addBtn: { backgroundColor: '#1F2937', padding: 4, borderRadius: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, marginTop: 16 },
+  bestSellerCard: { flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 16, padding: 8, marginRight: 16, width: 280 },
+  bestSellerImage: { width: 80, height: 80, borderRadius: 16, marginRight: 12 },
+  bestSellerInfo: { flex: 1, justifyContent: 'space-between' },
+  bestSellerName: { fontWeight: '600' },
+  bestSellerSub: { fontSize: 12, color: '#6B7280' },
+  bestSellerPrice: { fontWeight: 'bold', color: '#1F2937' },
+  featuredCard: { width: 120, height: 140, marginRight: 12, borderRadius: 16, overflow: 'hidden', backgroundColor: '#F3F4F6', justifyContent: 'flex-end', padding: 8 },
+featuredImage: { width: '100%', height: 100, borderRadius: 16 },
+featuredName: { fontWeight: '600', textAlign: 'center', marginTop: 4 },
 });
