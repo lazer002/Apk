@@ -13,9 +13,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../utils/config';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function HomeScreen() {
-  const [selectedCategory, setSelectedCategory] = useState('Chairs');
+export default function HomeScreen({ navigation }) {
+  const [selectedCategory, setSelectedCategory] = useState('Hoodie');
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ export default function HomeScreen() {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const res = await api.get('/api/public/categories');
+      const res = await api.get('/api/categories');
       setCategories(Array.isArray(res.data.categories) ? res.data.categories : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -60,7 +61,6 @@ export default function HomeScreen() {
   );
 
   const newArrivals = products.filter((p) => p.isNewProduct);
-  const bestSellers = products.slice(0, 5); // example: top 5 products
 
   if (loading) {
     return (
@@ -81,13 +81,13 @@ const topRatedProducts = products
   .sort((a, b) => b.rating - a.rating)
   .slice(0, 5);
 const discountedProducts = products.filter(p => p.onSale);
-const featuredCollections = categories.slice(0, 5); 
 
   return (
+    <SafeAreaView>
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Discover the Best Furniture</Text>
+        <Text style={styles.headerText}>Discover the Best Drip</Text>
         <Image source={{ uri: 'https://i.pravatar.cc/100' }} style={styles.avatar} />
       </View>
 
@@ -95,7 +95,7 @@ const featuredCollections = categories.slice(0, 5);
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="gray" />
         <TextInput
-          placeholder="Search for furniture"
+          placeholder="Search for Drip"
           style={styles.searchInput}
           value={searchText}
           onChangeText={setSearchText}
@@ -126,42 +126,49 @@ const featuredCollections = categories.slice(0, 5);
       </ScrollView>
 
       {/* Filtered Products */}
-      <Text style={styles.sectionTitle}>{selectedCategory} Products</Text>
-      <FlatList
-        data={filteredProducts}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item._id}
-        style={{ marginBottom: 20 }}
-        renderItem={({ item }) => (
-          <View style={styles.productCard}>
-            <Image
-              source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }}
-              style={styles.productImage}
-            />
-            {item.isNewProduct && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>NEW</Text>
-              </View>
-            )}
-            {item.onSale && (
-              <View style={[styles.badge, { backgroundColor: '#10B981', top: 30 }]}>
-                <Text style={styles.badgeText}>SALE</Text>
-              </View>
-            )}
-            <Text style={styles.productName}>{item.title}</Text>
-            <Text style={styles.productSub} numberOfLines={2}>
-              {item.description || 'No description'}
-            </Text>
-            <View style={styles.priceRow}>
-              <Text style={styles.price}>${item.price}</Text>
-              <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
-                <Ionicons name="add" size={16} color="white" />
-              </TouchableOpacity>
-            </View>
+ <Text style={styles.sectionTitle}>{selectedCategory} Products</Text>
+<FlatList
+  data={filteredProducts}
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  keyExtractor={(item) => item._id}
+  style={{ marginBottom: 20 }}
+  renderItem={({ item }) => (
+    <TouchableOpacity
+    
+onPress={() => navigation.navigate('Product', { id: item._id })}
+      activeOpacity={0.8}
+    >
+      <View style={styles.productCard}>
+        <Image
+          source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }}
+          style={styles.productImage}
+        />
+        {item.isNewProduct && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>NEW</Text>
           </View>
         )}
-      />
+        {item.onSale && (
+          <View style={[styles.badge, { backgroundColor: '#10B981', top: 30 }]}>
+            <Text style={styles.badgeText}>SALE</Text>
+          </View>
+        )}
+        <Text style={styles.productName}>{item.title}</Text>
+        <Text style={styles.productSub} numberOfLines={2}>
+          {item.description || 'No description'}
+        </Text>
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>${item.price}</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
+            <Ionicons name="add" size={16} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  )}
+/>
+
 
       {/* New Arrivals */}
       {newArrivals.length > 0 && (
@@ -194,30 +201,7 @@ const featuredCollections = categories.slice(0, 5);
         </>
       )}
 
-      {/* Best Sellers */}
-      <Text style={styles.sectionTitle}>Best Sellers</Text>
-      <FlatList
-        data={bestSellers}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => 'bs-' + item._id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.bestSellerCard}>
-            <Image
-              source={{ uri: item.images[0] || 'https://via.placeholder.com/80' }}
-              style={styles.bestSellerImage}
-            />
-            <View style={styles.bestSellerInfo}>
-              <Text style={styles.bestSellerName}>{item.title}</Text>
-              <Text style={styles.bestSellerSub} numberOfLines={1}>
-                {item.description || 'No description'}
-              </Text>
-              <Text style={styles.bestSellerPrice}>${item.price}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-
+    
 
 
 	  {trendingProducts.length > 0 && (
@@ -298,31 +282,15 @@ const featuredCollections = categories.slice(0, 5);
   </>
 )}
 
-{/* Featured Collections */}
-{featuredCollections.length > 0 && (
-  <>
-    <Text style={styles.sectionTitle}>Featured Collections</Text>
-    <FlatList
-      data={featuredCollections}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      keyExtractor={item => 'fc-' + item._id}
-      renderItem={({ item }) => (
-        <TouchableOpacity style={styles.featuredCard}>
-          <Image source={{ uri: item.image || 'https://via.placeholder.com/120' }} style={styles.featuredImage} />
-          <Text style={styles.featuredName}>{item.name}</Text>
-        </TouchableOpacity>
-      )}
-    />
-  </>
-)}
+
     </ScrollView>
+   </SafeAreaView>
   );
 }
 
 // Styles remain unchanged
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white', padding: 16 },
+  container: { flex: 1, backgroundColor: 'white', padding: 16 ,paddingBottom:120},
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerText: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },

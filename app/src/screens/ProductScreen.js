@@ -1,31 +1,54 @@
-import { useEffect, useState } from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  FlatList,
+  LayoutAnimation,
+  UIManager,
+  Platform
+} from 'react-native';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { api } from '../utils/config';
-import { useFavorites } from '../context/FavoritesContext'; // ✅ import FavoritesContext
+import { useFavorites } from '../context/FavoritesContext';
+
+const { width } = Dimensions.get('window');
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function ProductScreen({ route, navigation }) {
   const { id } = route.params;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // ✅ Favorites
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const [favorite, setFavorite] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [accordionOpen, setAccordionOpen] = useState({});
+  const sizes = ["XS","S","M","L","XL","XXL"];
 
   useEffect(() => {
-    const load = async () => {
+    const loadProduct = async () => {
       try {
-        const res = await api.post(`/api/products/${id}`);
+        const res = await api.get(`/api/products/${id}`);
         setProduct(res.data);
-        setFavorite(isFavorite(res.data._id)); // initialize favorite state
-      } catch (e) {
-        console.error(e);
+        setFavorite(isFavorite(res.data._id));
+      } catch (err) {
+        console.error('Error loading product:', err);
       } finally {
         setLoading(false);
       }
     };
-    load();
+    loadProduct();
   }, [id]);
 
   const toggleFavorite = () => {
@@ -39,46 +62,206 @@ export default function ProductScreen({ route, navigation }) {
     }
   };
 
+  const toggleAccordion = (key) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setAccordionOpen(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+
+  const addToCart = () => console.log("Add to Cart:", product._id, "Size:", selectedSize);
+
   if (loading)
     return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FF6347" />
       </View>
     );
 
   if (!product)
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Not found</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ fontSize: 16, color: '#555' }}>Product not found</Text>
       </View>
     );
 
   return (
-    <ScrollView className="flex-1 bg-white">
-      <Image
-        source={{ uri: product.images?.[0] }}
-        style={{ width: '100%', height: 320, backgroundColor: '#eee' }}
-      />
-
-      <View className="p-4 flex-row justify-between items-start">
-        <View className="flex-1">
-          <Text className="text-xl font-bold">{product.title}</Text>
-          <Text className="text-lg text-gray-700 mt-1">₹{product.price}</Text>
-          <Text className="text-gray-500 mt-2">{product.description}</Text>
-        </View>
-
-        {/* ✅ Favorite button */}
-        <TouchableOpacity onPress={toggleFavorite} className="ml-4 mt-1">
-          <Ionicons name={favorite ? 'heart' : 'heart-outline'} size={28} color={favorite ? 'red' : 'gray'} />
+    <ScrollView style={{ flex: 1, backgroundColor: '#fff', padding: 16 }}>
+      {/* Images */}
+      <View>
+        <TouchableOpacity>
+          <Image
+            source={{ uri: product.images[activeImage] }}
+            style={{ width: '100%', height: 400, borderRadius: 12 }}
+            resizeMode="cover"
+          />
         </TouchableOpacity>
+
+        {/* Thumbnails */}
+        <FlatList
+          data={product.images}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(_, idx) => idx.toString()}
+          style={{ marginTop: 12 }}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity onPress={() => setActiveImage(index)}>
+              <Image
+                source={{ uri: item }}
+                style={[
+                  styles.thumbnail,
+                  activeImage === index && styles.activeThumbnail,
+                ]}
+              />
+            </TouchableOpacity>
+          )}
+        />
       </View>
 
-      <TouchableOpacity
-        className="mt-4 bg-black py-3 rounded-md mx-4"
-        onPress={() => navigation.navigate('Cart', { add: { productId: product._id } })}
-      >
-        <Text className="text-center text-white font-semibold">Add to Cart</Text>
-      </TouchableOpacity>
+      {/* Info */}
+      <View style={{ marginTop: 20 }}>
+        <Text style={styles.title}>{product.title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 6 }}>
+          <Text style={styles.price}>₹ {product.price?.toFixed(2)}</Text>
+          {product.discount && (
+            <View style={styles.discountBadge}>
+              <Text style={{ color: '#fff', fontSize: 12 }}>{product.discount}% OFF</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Size Selection */}
+      {product.sizes && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={{ fontWeight: '600', marginBottom: 6 }}>Select Size:</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {sizes.map((size) => {
+              const isAvailable = product.sizes.includes(size);
+              return (
+                <TouchableOpacity
+                  key={size}
+                  disabled={!isAvailable}
+                  onPress={() => isAvailable && setSelectedSize(size)}
+                  style={[
+                    styles.sizePill,
+                    selectedSize === size && styles.selectedSize,
+                    !isAvailable && styles.disabledSize,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      selectedSize === size && { color: '#fff' },
+                      !isAvailable && { color: '#999' },
+                    ]}
+                  >
+                    {size}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {selectedSize && (
+            <Text style={{ marginTop: 8 }}>Selected Size: {selectedSize}</Text>
+          )}
+        </View>
+      )}
+
+      {/* Actions */}
+      <View style={{ marginTop: 20 }}>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <TouchableOpacity onPress={addToCart} style={styles.button}>
+            <Ionicons name="cart-outline" size={20} color="#fff" />
+            <Text style={{ color: '#fff', marginLeft: 6 }}>Add to Cart</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setWishlisted(!wishlisted)} style={[styles.button, styles.outlineButton]}>
+            <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={20} color={wishlisted ? "#000" : "#000"} />
+            <Text style={{ marginLeft: 6 }}>Wishlist</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={[styles.button, { marginTop: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#FF6347' }]}>
+          <Ionicons name="card-outline" size={20} color="#FF6347" />
+          <Text style={{ color: '#FF6347', marginLeft: 6 }}>Buy Now</Text>
+        </TouchableOpacity>
+
+        {/* Feature Icons */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 }}>
+          <View style={styles.featureBox}>
+            <MaterialIcons name="local-shipping" size={28} color="#FF6347" />
+            <Text style={{ fontSize: 12, textAlign: 'center' }}>Priority Delivery</Text>
+          </View>
+          <View style={styles.featureBox}>
+            <MaterialIcons name="swap-horiz" size={28} color="#FF6347" />
+            <Text style={{ fontSize: 12, textAlign: 'center' }}>Easy Exchange</Text>
+          </View>
+          <View style={styles.featureBox}>
+            <MaterialIcons name="payment" size={28} color="#FF6347" />
+            <Text style={{ fontSize: 12, textAlign: 'center' }}>Cash on Delivery</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Accordion Section */}
+      <View style={{ marginTop: 24 }}>
+        {['Description', 'Product Code', 'Fit & Size', 'Additional Details'].map((title, idx) => (
+          <View key={idx} style={styles.accordionItem}>
+            <TouchableOpacity onPress={() => toggleAccordion(title)} style={styles.accordionHeader}>
+              <Text style={{ fontWeight: '600' }}>{title}</Text>
+              <Ionicons name={accordionOpen[title] ? "remove" : "add"} size={20} />
+            </TouchableOpacity>
+            {accordionOpen[title] && (
+              <View style={styles.accordionContent}>
+                <Text>
+                  {title === 'Description' ? product.description :
+                   title === 'Product Code' ? product.code || 'N/A' :
+                   title === 'Fit & Size' ? product.fit || 'Standard Fit' :
+                   product.additionalDetails || 'No details available.'}
+                </Text>
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
+
+      {/* Recommended / Similar Products */}
+      <View style={{ marginTop: 24 }}>
+        <Text style={{ fontWeight: '600', fontSize: 16, marginBottom: 12 }}>You Might Be Interested</Text>
+        <FlatList
+          data={product.similarProducts || []}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(_, idx) => idx.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.recommendedItem}>
+              <Image source={{ uri: item.image }} style={styles.recommendedImage} />
+              <Text style={{ fontSize: 12, fontWeight: '500', marginTop: 4 }}>{item.title}</Text>
+              <Text style={{ fontSize: 12, color: '#FF6347' }}>₹{item.price}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  title: { fontSize: 22, fontWeight: '700', color: '#111' },
+  price: { fontSize: 16, fontWeight: '700', color: '#FF6347' },
+  description: { fontSize: 14, color: '#666', marginTop: 8 },
+  discountBadge: { backgroundColor: '#FF6347', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  thumbnail: { width: 60, height: 60, borderRadius: 6, borderWidth: 1, borderColor: '#ccc', marginRight: 8 },
+  activeThumbnail: { borderColor: '#FF6347', borderWidth: 2 },
+  sizePill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#ccc', backgroundColor: '#fff' },
+  selectedSize: { backgroundColor: '#FF6347', borderColor: '#FF6347', color: '#fff' },
+  disabledSize: { backgroundColor: '#f0f0f0', borderColor: '#ccc' },
+  button: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FF6347', padding: 12, borderRadius: 10 },
+  outlineButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#FF6347' },
+  offerBox: { flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: '#eee', borderRadius: 8, marginBottom: 8 },
+  featureBox: { justifyContent: 'center', alignItems: 'center', width: 100 },
+  accordionItem: { borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 8 },
+  accordionHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
+  accordionContent: { paddingVertical: 8 },
+  recommendedItem: { width: 120, marginRight: 12 },
+  recommendedImage: { width: 120, height: 120, borderRadius: 8 },
+});
