@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native'
 import { getApiBaseUrl } from '../utils/config'
-import { getToken } from '../utils/token'
+import { getToken } from '../utils/auth'
 
 export default function CheckoutScreen() {
 	const [address, setAddress] = useState({ line1: '', city: '', zip: '' })

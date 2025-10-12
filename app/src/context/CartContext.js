@@ -1,11 +1,10 @@
 // src/context/CartContext.js
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
-import axios from 'axios';
+import { api } from '../utils/config'; // centralized Axios instance
 import { user } from './AuthContext';
 
 const CartContext = createContext(null);
-const API_URL = 'http://localhost:4000/api'; // replace with your API
 
 function ensureGuestId() {
   let gid = globalThis.guestId; // you can persist in AsyncStorage if needed
@@ -17,18 +16,13 @@ function ensureGuestId() {
 }
 
 export function CartProvider({ children }) {
-
   const [items, setItems] = useState([]);
   const guestId = ensureGuestId();
 
-  const client = useMemo(() => axios.create({
-    baseURL: `${API_URL}/cart`,
-    headers: { 'x-guest-id': guestId }
-  }), [guestId]);
-
+  // Fetch cart
   const refresh = async () => {
     try {
-      const { data } = await client.get('/');
+      const { data } = await api.get('/api/cart', { headers: { 'x-guest-id': guestId } });
       setItems(data.items);
     } catch (err) {
       console.error(err);
@@ -37,14 +31,14 @@ export function CartProvider({ children }) {
   };
 
   // Fetch cart on load
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh() }, []);
 
   // Merge guest cart after login
   const mergeGuestCart = async () => {
     if (!user) return;
 
     try {
-      await axios.post(`${API_URL}/cart/merge`, { guestId }, {
+      await api.post('/api/cart/merge', { guestId }, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       await refresh();
@@ -81,7 +75,7 @@ export function CartProvider({ children }) {
     }
 
     try {
-      await client.post('/add', { productId, size, quantity });
+      await api.post('/api/cart/add', { productId, size, quantity }, { headers: { 'x-guest-id': guestId } });
       await refresh();
     } catch (err) {
       console.error(err);
@@ -93,7 +87,7 @@ export function CartProvider({ children }) {
   const update = async (productId, quantity) => {
     setItems(prev => prev.map(i => i.product._id === productId ? { ...i, quantity } : i));
     try {
-      await client.post('/update', { productId, quantity });
+      await api.post('/api/cart/update', { productId, quantity }, { headers: { 'x-guest-id': guestId } });
       await refresh();
     } catch (err) {
       console.error(err);
@@ -105,7 +99,7 @@ export function CartProvider({ children }) {
   const remove = async (productId) => {
     setItems(prev => prev.filter(i => i.product._id !== productId));
     try {
-      await client.post('/remove', { productId });
+      await api.post('/api/cart/remove', { productId }, { headers: { 'x-guest-id': guestId } });
       await refresh();
     } catch (err) {
       console.error(err);

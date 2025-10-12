@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import {
   View,
   Text,
@@ -10,38 +10,35 @@ import {
   StyleSheet,
   FlatList,
   LayoutAnimation,
-  UIManager,
-  Platform
+
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { api } from '../utils/config';
-import { useFavorites } from '../context/FavoritesContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useCart } from '../context/CartContext';
 
 const { width } = Dimensions.get('window');
-
 // Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export default function ProductScreen({ route, navigation }) {
+ const { add } = useCart();
   const { id } = route.params;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [favorite, setFavorite] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState(null);
   const [wishlisted, setWishlisted] = useState(false);
   const [accordionOpen, setAccordionOpen] = useState({});
   const sizes = ["XS","S","M","L","XL","XXL"];
-
+  const flatListRef = useRef(null);
   useEffect(() => {
     const loadProduct = async () => {
       try {
         const res = await api.get(`/api/products/${id}`);
         setProduct(res.data);
-        setFavorite(isFavorite(res.data._id));
+        setFavorite(isInWishlist(res.data._id));
       } catch (err) {
         console.error('Error loading product:', err);
       } finally {
@@ -51,15 +48,15 @@ export default function ProductScreen({ route, navigation }) {
     loadProduct();
   }, [id]);
 
-  const toggleFavorite = () => {
-    if (!product) return;
-    if (favorite) {
-      removeFavorite(product._id);
-      setFavorite(false);
-    } else {
-      addFavorite(product);
-      setFavorite(true);
-    }
+
+  const onMomentumScrollEnd = (e) => {
+    const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+    setActiveImage(newIndex);
+  };
+
+  const scrollToIndex = (index) => {
+    setActiveImage(index);
+    flatListRef.current?.scrollToOffset({ offset: index * width, animated: true });
   };
 
   const toggleAccordion = (key) => {
@@ -68,7 +65,6 @@ export default function ProductScreen({ route, navigation }) {
   };
 
 
-  const addToCart = () => console.log("Add to Cart:", product._id, "Size:", selectedSize);
 
   if (loading)
     return (
@@ -83,39 +79,52 @@ export default function ProductScreen({ route, navigation }) {
         <Text style={{ fontSize: 16, color: '#555' }}>Product not found</Text>
       </View>
     );
-
+console.log(selectedSize)
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff', padding: 16 }}>
       {/* Images */}
-      <View>
-        <TouchableOpacity>
+    <View>
+      {/* Main swipeable image */}
+      <FlatList
+        ref={flatListRef}
+        data={product.images}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(_, idx) => idx.toString()}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        extraData={activeImage}
+        renderItem={({ item }) => (
           <Image
-            source={{ uri: product.images[activeImage] }}
-            style={{ width: '100%', height: 400, borderRadius: 12 }}
+            source={{ uri: item }}
+            style={styles.mainImage}
             resizeMode="cover"
           />
-        </TouchableOpacity>
+        )}
+      />
 
-        {/* Thumbnails */}
-        <FlatList
-          data={product.images}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(_, idx) => idx.toString()}
-          style={{ marginTop: 12 }}
-          renderItem={({ item, index }) => (
-            <TouchableOpacity onPress={() => setActiveImage(index)}>
-              <Image
-                source={{ uri: item }}
-                style={[
-                  styles.thumbnail,
-                  activeImage === index && styles.activeThumbnail,
-                ]}
-              />
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+      {/* Thumbnails */}
+    <FlatList
+        data={product.images}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(_, idx) => idx.toString()}
+        style={{ marginTop: 12 }}
+        contentContainerStyle={{ paddingHorizontal: 10 }}
+        extraData={activeImage} // important to re-render thumbnails
+        renderItem={({ item, index }) => (
+          <TouchableOpacity onPress={() => scrollToIndex(index)}>
+            <Image
+              source={{ uri: item }}
+              style={[
+                styles.thumbnail,
+                activeImage === index && styles.activeThumbnail,
+              ]}
+            />
+          </TouchableOpacity>
+        )}
+      />
+    </View>
 
       {/* Info */}
       <View style={{ marginTop: 20 }}>
@@ -169,12 +178,33 @@ export default function ProductScreen({ route, navigation }) {
       {/* Actions */}
       <View style={{ marginTop: 20 }}>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <TouchableOpacity onPress={addToCart} style={styles.button}>
+          <TouchableOpacity
+            onPress={() => {
+              if (!selectedSize) {
+                alert('Please select a size first!');
+                return;
+              }
+              add(product._id, selectedSize);
+            }}
+            style={styles.button}
+          >
             <Ionicons name="cart-outline" size={20} color="#fff" />
             <Text style={{ color: '#fff', marginLeft: 6 }}>Add to Cart</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setWishlisted(!wishlisted)} style={[styles.button, styles.outlineButton]}>
-            <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={20} color={wishlisted ? "#000" : "#000"} />
+
+          <TouchableOpacity
+            onPress={() =>
+              isInWishlist(product._id)
+                ? removeFromWishlist(product._id)
+                : addToWishlist(product._id)
+            }
+            style={[styles.button, styles.outlineButton]}
+          >
+            <Ionicons
+              name={isInWishlist(product._id) ? "heart" : "heart-outline"}
+              size={20}
+              color={isInWishlist(product._id) ? "#FF6347" : "#000"}
+            />
             <Text style={{ marginLeft: 6 }}>Wishlist</Text>
           </TouchableOpacity>
         </View>
@@ -264,4 +294,21 @@ const styles = StyleSheet.create({
   accordionContent: { paddingVertical: 8 },
   recommendedItem: { width: 120, marginRight: 12 },
   recommendedImage: { width: 120, height: 120, borderRadius: 8 },
+  mainImage: {
+    width,
+    height: 400,
+    borderRadius: 12,
+  },
+  thumbnail: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  activeThumbnail: {
+    borderWidth: 2,
+    borderColor: '#FF6347',
+  },
 });
