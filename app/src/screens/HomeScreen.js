@@ -85,6 +85,7 @@ const filteredProducts = products.filter((p) => {
     <Text style={styles.header}>Products</Text>
 
     {/* 🔍 Search Bar */}
+    <View style={styles.searchBarContainer}>
     <View style={styles.searchBar}>
       <Ionicons name="search" size={20} color="gray" />
       <TextInput
@@ -93,6 +94,7 @@ const filteredProducts = products.filter((p) => {
         value={searchText}
         onChangeText={setSearchText}
       />
+    </View>
     </View>
 {/* ===== Hero Banner ===== */}
 
@@ -198,14 +200,15 @@ const filteredProducts = products.filter((p) => {
 
 const styles = StyleSheet.create({
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerContainer: { padding: 16 },
+  // headerContainer: { padding: 16 },
   header: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
+  searchBarContainer: { paddingHorizontal: 16, marginBottom: 8 },
 searchBar: {
   flexDirection: 'row',
   alignItems: 'center',
   backgroundColor: '#F3F4F6',
-  borderRadius: 12,
-  paddingHorizontal: 12,
+  // borderRadius: 12,
+  paddingHorizontal: 22,
   paddingVertical: 8,
   marginBottom: 16,
 },
@@ -226,7 +229,9 @@ wishlistButton: {
 },
 
 
- // Updated Styles
+categoriesWrapper:{
+  paddingHorizontal: 16,
+},
 categoriesContainer: { paddingVertical: 12 }, // give some top-bottom padding
 categoryBtn: {
   paddingHorizontal: 20,

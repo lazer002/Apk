@@ -45,8 +45,8 @@ const styles = StyleSheet.create({
   container: {
     width,
     height: 200,
-    marginBottom: 16,
-    borderRadius: 12,
+    // marginBottom: 16,
+    // borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#000', // prevent flicker
   },

@@ -31,9 +31,7 @@
     "react-native-svg-transformer": "^1.5.1",
     "react-native-swiper": "^1.6.0",
     "react-native-web": "^0.21.1",
-    "setimmediate": "^1.0.5",
-    "tailwindcss": "^4.1.14",
-    "undefined": "expo-auth-session/providers/google"
+    "setimmediate": "^1.0.5"
   },
   "private": true,
   "devDependencies": {
