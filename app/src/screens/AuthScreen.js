@@ -1,28 +1,14 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Google from 'expo-auth-session/providers/google';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/config';
-import { AuthContext } from '../context/AuthContext';
 
 export default function AuthScreen({ navigation }) {
-  const { login } = useContext(AuthContext); // ✅ AuthContext
+  const { promptGoogleLogin } = useAuth(); // ✅ AuthContext
   const [email, setEmail] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Google Auth request
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // replace with your client ID
-  });
-
-  // Handle Google login response
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
-      handleGoogleLogin(id_token);
-    }
-  }, [response]);
 
   // Email OTP login
   const handleContinue = async () => {
@@ -46,27 +32,7 @@ export default function AuthScreen({ navigation }) {
     }
   };
 
-  // Google login
-  const handleGoogleLogin = async (idToken) => {
-    try {
-      setLoading(true);
-      const res = await api.post('/api/auth/google', { token: idToken });
-
-      if (res.status === 200 && res.data?.token && res.data?.user) {
-        // ✅ Use AuthContext login function
-        await login(res.data.user, res.data.token, res.data.refreshToken);
-        Alert.alert('Success', 'Logged in with Google!');
-        navigation.replace('Tabs'); // Navigate to main app
-      } else {
-        Alert.alert('Error', res.data?.message || 'Google login failed');
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Google login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Google login button
 
   return (
     <View style={styles.container}>
@@ -74,8 +40,8 @@ export default function AuthScreen({ navigation }) {
       <Text style={styles.subHeading}>Login quickly to continue</Text>
 
       {/* Email Input */}
-      <View style={[styles.inputWrapper, { borderColor: isFocused ? '#FF6347' : '#ddd' }]}>
-        <Ionicons name="mail-outline" size={24} color="#FF6347" style={{ marginRight: 10 }} />
+      <View style={[styles.inputWrapper, { borderColor: isFocused ? '#000' : '#ddd' }]}>
+        <Ionicons name="mail-outline" size={22} color="#000" style={{ marginRight: 10 }} />
         <TextInput
           value={email}
           onChangeText={setEmail}
@@ -83,7 +49,7 @@ export default function AuthScreen({ navigation }) {
           keyboardType="email-address"
           autoCapitalize="none"
           style={styles.input}
-          placeholderTextColor="#999"
+          placeholderTextColor="#888"
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
@@ -94,13 +60,15 @@ export default function AuthScreen({ navigation }) {
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Continue</Text>}
       </TouchableOpacity>
 
+      <Text style={styles.orText}>OR</Text>
+
       {/* Google Login */}
       <TouchableOpacity
         style={styles.googleButton}
-        onPress={() => promptAsync({ useProxy: true })}
-        disabled={!request || loading}
+        onPress={async () => await promptGoogleLogin()}
+        disabled={loading}
       >
-        <MaterialCommunityIcons name="google" size={24} color="#fff" style={{ marginRight: 10 }} />
+        <MaterialCommunityIcons name="google" size={22} color="#fff" style={{ marginRight: 12 }} />
         <Text style={styles.googleButtonText}>Login with Google</Text>
       </TouchableOpacity>
     </View>
@@ -108,13 +76,14 @@ export default function AuthScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 80, backgroundColor: '#fff' },
-  heading: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', color: '#FF6347', marginBottom: 8 },
-  subHeading: { fontSize: 16, textAlign: 'center', color: '#666', marginBottom: 32 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderRadius: 12, paddingHorizontal: 12, backgroundColor: '#f9f9f9', marginBottom: 16 },
-  input: { flex: 1, height: 50, fontSize: 16, color: '#333' },
-  loginButton: { flexDirection: 'row', justifyContent: 'center', backgroundColor: '#FF6347', padding: 16, borderRadius: 12, marginBottom: 16, alignItems: 'center' },
+  container: { flex: 1, paddingHorizontal: 24, paddingTop: 100, backgroundColor: '#fff', alignItems: 'center' },
+  heading: { fontSize: 30, fontWeight: '700', textAlign: 'center', color: '#000', marginBottom: 6 },
+  subHeading: { fontSize: 16, textAlign: 'center', color: '#444', marginBottom: 36 },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 14, backgroundColor: '#fff', width: '100%', height: 52, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 3 },
+  input: { flex: 1, height: 50, fontSize: 16, color: '#000' },
+  loginButton: { flexDirection: 'row', justifyContent: 'center', backgroundColor: '#000', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 12, width: '100%', alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, elevation: 4 },
   loginButtonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  googleButton: { flexDirection: 'row', justifyContent: 'center', backgroundColor: '#4285F4', padding: 16, borderRadius: 12, alignItems: 'center' },
+  orText: { fontSize: 14, color: '#888', marginVertical: 10 },
+  googleButton: { flexDirection: 'row', justifyContent: 'center', backgroundColor: '#444', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 12, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 5, elevation: 3 },
   googleButtonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 });

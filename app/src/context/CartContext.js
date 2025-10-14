@@ -77,6 +77,7 @@ export function CartProvider({ children }) {
     try {
       await api.post('/api/cart/add', { productId, size, quantity }, { headers: { 'x-guest-id': guestId } });
       await refresh();
+      Alert.alert("Added to Cart", "Product added to your cart!");
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Failed to add item");
@@ -84,17 +85,29 @@ export function CartProvider({ children }) {
     }
   };
 
-  const update = async (productId, quantity) => {
-    setItems(prev => prev.map(i => i.product._id === productId ? { ...i, quantity } : i));
-    try {
-      await api.post('/api/cart/update', { productId, quantity }, { headers: { 'x-guest-id': guestId } });
-      await refresh();
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Failed to update cart");
-      refresh();
-    }
-  };
+const update = async (productId, quantity, size) => {
+  setItems(prev =>
+    prev.map(i =>
+      i.product._id === productId && i.size === size
+        ? { ...i, quantity }
+        : i
+    )
+  );
+
+  try {
+    await api.post(
+      '/api/cart/update',
+      { productId, quantity, size }, // send size as well
+      { headers: { 'x-guest-id': guestId } }
+    );
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    Alert.alert("Error", "Failed to update cart");
+    refresh();
+  }
+};
+
 
   const remove = async (productId) => {
     setItems(prev => prev.filter(i => i.product._id !== productId));

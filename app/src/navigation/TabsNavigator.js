@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import HomeStackNavigator from './HomeStackNavigator';
-import CategoriesScreen from '../screens/CategoriesScreen';
+import CategoryStackNavigator from './CategoryStackNavigator';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -33,7 +33,7 @@ export default function TabsNavigator() {
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#FF6347',
+        tabBarActiveTintColor: 'black',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
         tabBarStyle: {
@@ -65,7 +65,7 @@ export default function TabsNavigator() {
       })}
     >
       <Tabs.Screen name="Home" component={HomeStackNavigator} />
-      <Tabs.Screen name="Categories" component={CategoriesScreen} />
+      <Tabs.Screen name="Categories" component={CategoryStackNavigator} />
       <Tabs.Screen name="Favorites" component={FavoritesScreen} />
       <Tabs.Screen name="Cart" component={CartScreen} />
 

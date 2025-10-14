@@ -69,7 +69,7 @@ const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlis
   if (loading)
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#FF6347" />
+        <ActivityIndicator size="large" color="black" />
       </View>
     );
 
@@ -203,29 +203,29 @@ console.log(selectedSize)
             <Ionicons
               name={isInWishlist(product._id) ? "heart" : "heart-outline"}
               size={20}
-              color={isInWishlist(product._id) ? "#FF6347" : "#000"}
+              color={isInWishlist(product._id) ? "black" : "#000"}
             />
             <Text style={{ marginLeft: 6 }}>Wishlist</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.button, { marginTop: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#FF6347' }]}>
-          <Ionicons name="card-outline" size={20} color="#FF6347" />
-          <Text style={{ color: '#FF6347', marginLeft: 6 }}>Buy Now</Text>
+        <TouchableOpacity style={[styles.button, { marginTop: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: 'black' }]}>
+          <Ionicons name="card-outline" size={20} color="black" />
+          <Text style={{ color: 'black', marginLeft: 6 }}>Buy Now</Text>
         </TouchableOpacity>
 
         {/* Feature Icons */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 }}>
           <View style={styles.featureBox}>
-            <MaterialIcons name="local-shipping" size={28} color="#FF6347" />
+            <MaterialIcons name="local-shipping" size={28} color="black" />
             <Text style={{ fontSize: 12, textAlign: 'center' }}>Priority Delivery</Text>
           </View>
           <View style={styles.featureBox}>
-            <MaterialIcons name="swap-horiz" size={28} color="#FF6347" />
+            <MaterialIcons name="swap-horiz" size={28} color="black" />
             <Text style={{ fontSize: 12, textAlign: 'center' }}>Easy Exchange</Text>
           </View>
           <View style={styles.featureBox}>
-            <MaterialIcons name="payment" size={28} color="#FF6347" />
+            <MaterialIcons name="payment" size={28} color="black" />
             <Text style={{ fontSize: 12, textAlign: 'center' }}>Cash on Delivery</Text>
           </View>
         </View>
@@ -265,7 +265,7 @@ console.log(selectedSize)
             <TouchableOpacity style={styles.recommendedItem}>
               <Image source={{ uri: item.image }} style={styles.recommendedImage} />
               <Text style={{ fontSize: 12, fontWeight: '500', marginTop: 4 }}>{item.title}</Text>
-              <Text style={{ fontSize: 12, color: '#FF6347' }}>₹{item.price}</Text>
+              <Text style={{ fontSize: 12, color: 'black' }}>₹{item.price}</Text>
             </TouchableOpacity>
           )}
         />
@@ -277,16 +277,16 @@ console.log(selectedSize)
 
 const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', color: '#111' },
-  price: { fontSize: 16, fontWeight: '700', color: '#FF6347' },
+  price: { fontSize: 16, fontWeight: '700', color: 'black' },
   description: { fontSize: 14, color: '#666', marginTop: 8 },
-  discountBadge: { backgroundColor: '#FF6347', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  discountBadge: { backgroundColor: 'black', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   thumbnail: { width: 60, height: 60, borderRadius: 6, borderWidth: 1, borderColor: '#ccc', marginRight: 8 },
-  activeThumbnail: { borderColor: '#FF6347', borderWidth: 2 },
+  activeThumbnail: { borderColor: 'black', borderWidth: 2 },
   sizePill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#ccc', backgroundColor: '#fff' },
-  selectedSize: { backgroundColor: '#FF6347', borderColor: '#FF6347', color: '#fff' },
+  selectedSize: { backgroundColor: 'black', borderColor: 'black', color: '#fff' },
   disabledSize: { backgroundColor: '#f0f0f0', borderColor: '#ccc' },
-  button: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FF6347', padding: 12, borderRadius: 10 },
-  outlineButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#FF6347' },
+  button: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', padding: 12, borderRadius: 10 },
+  outlineButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: 'black' },
   offerBox: { flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: '#eee', borderRadius: 8, marginBottom: 8 },
   featureBox: { justifyContent: 'center', alignItems: 'center', width: 100 },
   accordionItem: { borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 8 },
@@ -309,6 +309,6 @@ const styles = StyleSheet.create({
   },
   activeThumbnail: {
     borderWidth: 2,
-    borderColor: '#FF6347',
+    borderColor: 'black',
   },
 });

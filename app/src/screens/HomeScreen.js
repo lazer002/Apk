@@ -59,12 +59,10 @@ const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlis
     fetchCategories();
   }, []);
 
-  const handleAddToCart = (item) => {
-    Alert.alert('Added to Cart', `${item.title} has been added to your cart!`);
-  };
-
 const filteredProducts = products.filter((p) => {
-  const matchesCategory = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
+  const categoryName = p.category?.name || ""; 
+  const matchesCategory =
+    selectedCategory === "All" || categoryName.toLowerCase() === selectedCategory.toLowerCase();
   const matchesSearch = p.title.toLowerCase().includes(searchText.toLowerCase());
   return matchesCategory && matchesSearch;
 });
@@ -163,7 +161,7 @@ const filteredProducts = products.filter((p) => {
   <Ionicons
     name={isInWishlist(item._id) ? 'heart' : 'heart-outline'}
     size={20}
-    color={isInWishlist(item._id) ? '#FF6347' : '#fff'}
+    color={isInWishlist(item._id) ? '#FF6347' : 'black'}
   />
 </TouchableOpacity>
         <Image
@@ -223,7 +221,6 @@ wishlistButton: {
   top: 6,
   right: 6,
   zIndex: 10,
-  backgroundColor: 'rgba(0,0,0,0.3)',
   padding: 4,
   borderRadius: 12,
 },

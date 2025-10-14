@@ -10,7 +10,7 @@ export default function ScreenWrapper({ children }) {
   const routeName = state?.routes[state.index]?.name;
 
   const hideBack = ["HomeStackScreen", "Tabs", "Cart", "Favorites", "Profile", "Categories"].includes(routeName);
-  const hideCart = ["Tabs", "HomeStackScreen", "Cart",  "Profile", "Categories"].includes(routeName);
+  const hideCart = ["HomeStackScreen", "Cart",  "Profile", "Categories"].includes(routeName);
 
   return (
     <View style={{ flex: 1 }}>

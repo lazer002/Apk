@@ -1,9 +1,11 @@
 // src/context/AuthContext.js
-import React, { createContext, useState, useEffect,useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
+import * as Google from 'expo-auth-session/providers/google';
 import { api } from '../utils/config';
+
 
 export const AuthContext = createContext();
 
@@ -12,12 +14,16 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  
+  // Google Auth
+const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+  clientId: '473818401181-cq7stplcji2vvh7hg0uanq8f8hqcj6tv.apps.googleusercontent.com',
+});
+
+  // Storage helper
   const storage = {
     getItem: async (key) => {
       try {
         if (Platform.OS === 'web') return localStorage.getItem(key);
-
         if (['accessToken', 'refreshToken'].includes(key)) {
           return await SecureStore.getItemAsync(key);
         }
@@ -30,7 +36,6 @@ export const AuthProvider = ({ children }) => {
     setItem: async (key, value) => {
       try {
         if (Platform.OS === 'web') return localStorage.setItem(key, value);
-
         if (['accessToken', 'refreshToken'].includes(key)) {
           return await SecureStore.setItemAsync(key, value);
         }
@@ -42,7 +47,6 @@ export const AuthProvider = ({ children }) => {
     removeItem: async (key) => {
       try {
         if (Platform.OS === 'web') return localStorage.removeItem(key);
-
         if (['accessToken', 'refreshToken'].includes(key)) {
           return await SecureStore.deleteItemAsync(key);
         }
@@ -59,7 +63,6 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = await storage.getItem('accessToken');
         const userData = await storage.getItem('user');
-
         if (token && userData) {
           setAccessToken(token);
           setUser(JSON.parse(userData));
@@ -70,11 +73,10 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     };
-
     loadAuth();
   }, []);
 
-  /** Login user and save tokens */
+  /** Email/OTP login */
   const login = async (userData, token, refreshToken) => {
     try {
       setUser(userData);
@@ -99,7 +101,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /** Logout user and clear sensitive data */
+  /** Logout */
   const logout = async () => {
     try {
       setUser(null);
@@ -113,6 +115,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const promptGoogleLogin = async () => {
+    try {
+      const result = await promptAsync({ useProxy: true });
+      if (result.type === 'success') {
+        const idToken = result.params.id_token;
+        // Send token to your backend
+        const res = await api.post('/api/auth/google', { token: idToken });
+        if (res.data?.token && res.data?.user) {
+          await login(res.data.user, res.data.token, res.data.refreshToken);
+        } else {
+          Alert.alert('Error', 'Google login failed');
+        }
+      }
+    } catch (err) {
+      console.error('Google login failed', err);
+      Alert.alert('Error', 'Google login failed');
+    }
+  };
   /** Configure API headers dynamically */
   const authApi = api;
   if (accessToken) {
@@ -123,10 +143,20 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, login, logout, authApi, loading }}
+      value={{
+        user,
+        accessToken,
+        login,
+        logout,
+        authApi,
+        loading,
+        request, // export request if needed
+        promptGoogleLogin, // call this in your AuthScreen
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
+
 export const useAuth = () => useContext(AuthContext);
