@@ -9,8 +9,8 @@ import CategoryStackNavigator from './CategoryStackNavigator';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-
 import { AuthContext } from '../context/AuthContext';
+import SearchScreen from '../screens/SearchScreen';
 
 const Tabs = createBottomTabNavigator();
 

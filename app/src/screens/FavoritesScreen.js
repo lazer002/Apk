@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, Alert, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useWishlist } from '../context/WishlistContext';
@@ -41,83 +41,71 @@ export default function FavoritesScreen({ navigation }) {
     setSizeModalVisible(true);
   };
 
+  const renderProductCard = ({ item }) => {
+    const fav = isInWishlist(item._id);
 
+    return (
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate('Home', {
+            screen: 'ProductScreen',
+            params: { id: item._id },
+          })
+        }
+        activeOpacity={0.8}
+        style={styles.productCard}
+      >
+        {/* Wishlist Button */}
+        <TouchableOpacity
+          onPress={() => toggleWishlist(item._id)}
+          style={styles.wishlistButton}
+        >
+          <Ionicons
+            name={fav ? 'heart' : 'heart-outline'}
+            size={22}
+            color={fav ? '#FF6363' : '#111'}
+          />
+        </TouchableOpacity>
 
-const renderProductCard = ({ item, index }) => {
-  const fav = isInWishlist(item._id);
+        {/* Product Image */}
+        <Image
+          source={{ uri: item.images?.[0] || 'https://via.placeholder.com/150' }}
+          style={styles.productImage}
+        />
+
+        {/* Product Details */}
+        <View style={styles.productDetails}>
+          <Text style={styles.productName} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.productPrice}>₹{item.price}</Text>
+          <TouchableOpacity onPress={() => openSizeModal(item)}>
+            <Ionicons name="cart-outline" size={22} color="#111" />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <TouchableOpacity
-          onPress={() => 
-    navigation.navigate('Home', {
-      screen: 'ProductScreen',
-      params: { id: item._id },
-    })
-  }
-      activeOpacity={0.8}
-      style={[
-        styles.productCard,
-        wishlistProducts.length === 1 && { width: '50%' }, // single item width
-      ]}
-    >
-      {/* Wishlist Button */}
-      <TouchableOpacity
-        onPress={() => toggleWishlist(item._id)}
-        style={styles.wishlistButton}
-      >
-     <Ionicons
-  name={fav ? 'heart' : 'heart-outline'}
-  size={20}
-  color={fav ? '#FF6347' : 'black'}
-/>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Favorites</Text>
 
-      {/* Product Image */}
-      <Image
-        source={{ uri: item.images?.[0] || 'https://via.placeholder.com/150' }}
-        style={styles.productImage}
-      />
-
-      {/* Product Name + Add to Cart Icon */}
-      <View style={styles.productRow}>
-        <Text style={styles.productName} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <TouchableOpacity onPress={() => openSizeModal(item)}>
-          <Ionicons name="cart-outline" size={22} color="#111" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Product Price */}
-      <Text style={styles.productPrice}>₹{item.price}</Text>
-    </TouchableOpacity>
-  );
-};
-
-return (
-  <SafeAreaView style={styles.container}>
-    <Text style={styles.title}>Favorites</Text>
-
-    {wishlistProducts.length === 0 ? (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyText}>You haven't added any favorite products yet</Text>
-      </View>
-    ) : (
-      <FlatList
-        data={wishlistProducts}
-        keyExtractor={(item, index) => `${item._id}-${index}`} // unique for each row
-        numColumns={wishlistProducts.length === 1 ? 1 : 2} // dynamic columns
-        key={wishlistProducts.length === 1 ? 'grid-1' : 'grid-2'} // force re-render when numColumns changes
-        columnWrapperStyle={
-          wishlistProducts.length > 1
-            ? { justifyContent: 'space-between', marginBottom: 12 }
-            : null
-        }
-        renderItem={renderProductCard}
-        contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 120 }}
-        showsVerticalScrollIndicator={false}
-      />
-    )}
+      {wishlistProducts.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>You haven't added any favorite products yet</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={wishlistProducts}
+          keyExtractor={(item) => item._id.toString()}
+          numColumns={2}
+          renderItem={renderProductCard}
+          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12 }}
+          contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
       {/* Size Selection Modal */}
       <Modal
@@ -159,15 +147,13 @@ return (
           </View>
         </View>
       </Modal>
-
-
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 16 },
-  title: { fontSize: 22, fontWeight: '700', color: '#111', marginBottom: 16, paddingHorizontal: 8 },
+  container: { flex: 1, backgroundColor: '#F9FAFB', paddingTop: 16 },
+  title: { fontSize: 24, fontWeight: '700', color: '#111', marginBottom: 16 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
   emptyText: { fontSize: 16, color: '#666', textAlign: 'center' },
 
@@ -175,11 +161,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderWidth: 0.5,
-    borderColor: '#e5e5e5',
-    borderRadius: 8,
-    padding: 8,
-    position: 'relative',
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
     marginHorizontal: 4,
+    overflow: 'hidden',
+    height: 300,
   },
   wishlistButton: {
     position: 'absolute',
@@ -189,16 +175,34 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 20,
   },
-  productImage: { width: '100%', height: 140, borderRadius: 8, marginBottom: 8 },
-  productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  productName: { fontSize: 14, fontWeight: '600', color: '#111', flex: 1 },
-  productPrice: { fontSize: 14, fontWeight: '700', color: '#111', marginTop: 4 },
+  productImage: {
+    width: '100%',
+    height: '80%', // 80% image
+    resizeMode: 'cover',
+  },
+  productDetails: {
+    height: '20%', // 20% details
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111',
+  },
+  productPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111',
+  },
 
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',      // center vertically
-    alignItems: 'center',          // center horizontally
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   modalClose: {
-    backgroundColor: '#FF6347',
+    backgroundColor: '#FF6363',
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 8,
@@ -240,5 +244,4 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-
 });

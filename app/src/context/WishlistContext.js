@@ -54,7 +54,7 @@ export const WishlistProvider = ({ children }) => {
       const newList = [...wishlist, productId];
       setWishlist(newList);
       saveGuestWishlist(newList);
-      Alert.alert('Added', 'Product added to wishlist');
+      // Alert.alert('Added', 'Product added to wishlist');
       return;
     }
 

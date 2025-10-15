@@ -9,8 +9,8 @@ export default function ScreenWrapper({ children }) {
   const state = useNavigationState((state) => state);
   const routeName = state?.routes[state.index]?.name;
 
-  const hideBack = ["HomeStackScreen", "Tabs", "Cart", "Favorites", "Profile", "Categories"].includes(routeName);
-  const hideCart = ["HomeStackScreen", "Cart",  "Profile", "Categories"].includes(routeName);
+  const hideBack = ["HomeStackScreen", "Tabs", "Cart", "Favorites", "Profile", "Categories","CategoryProducts"].includes(routeName);
+  const hideCart = ["HomeStackScreen", "Cart",  "Profile", "Categories","CategoryProducts"].includes(routeName);
 
   return (
     <View style={{ flex: 1 }}>

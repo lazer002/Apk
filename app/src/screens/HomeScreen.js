@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../utils/config';
 import { Ionicons } from "@expo/vector-icons";
 import HeroBanner from '../components/HeroBanner';
-import Marquee from '../components/Marquee';
 import {useWishlist}  from '../context/WishlistContext';
 
 
@@ -78,125 +77,129 @@ const filteredProducts = products.filter((p) => {
 
   return (
 <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-  {/* ===== Header + Categories ===== */}
-  <View style={styles.headerContainer}>
-    <Text style={styles.header}>Products</Text>
+  <FlatList
+    data={filteredProducts}
+    keyExtractor={(item) => item._id}
+    numColumns={filteredProducts.length === 1 ? 1 : 2}
+    key={filteredProducts.length === 1 ? 'grid-1' : 'grid-2'}
+    showsVerticalScrollIndicator={false}
+    columnWrapperStyle={
+      filteredProducts.length > 1
+        ? { justifyContent: 'space-between', marginBottom: 2 }
+        : null
+    }
+    contentContainerStyle={{
+      paddingHorizontal: 8,
+      paddingBottom: 120,
+    }}
+    // 👇 All your top content goes here safely
+    ListHeaderComponent={
+      <View style={styles.headerContainer}>
+        {/* 🖼 Hero Banner */}
+        <HeroBanner />
 
-    {/* 🔍 Search Bar */}
-    <View style={styles.searchBarContainer}>
-    <View style={styles.searchBar}>
-      <Ionicons name="search" size={20} color="gray" />
-      <TextInput
-        placeholder="Search products..."
-        style={styles.searchInput}
-        value={searchText}
-        onChangeText={setSearchText}
-      />
-    </View>
-    </View>
-{/* ===== Hero Banner ===== */}
-
-<HeroBanner/>
-    <Marquee />
-    {/* 🏷 Categories */}
-    <View style={styles.categoriesWrapper}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 12 }}
-      >
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat._id}
-            style={[
-              styles.categoryBtn,
-              selectedCategory === cat.name
-                ? styles.categoryBtnActive
-                : styles.categoryBtnInactive,
-            ]}
-            onPress={() => setSelectedCategory(cat.name)}
-          >
-            <Text
-              style={
-                selectedCategory === cat.name
-                  ? styles.categoryTextActive
-                  : styles.categoryTextInactive
-              }
-            >
-              {cat.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  </View>
-
-  {/* ===== Product Grid ===== */}
-<FlatList
-  data={filteredProducts}
-  keyExtractor={(item) => item._id}
-  numColumns={filteredProducts.length === 1 ? 1 : 2} 
-  key={filteredProducts.length === 1 ? 'grid-1' : 'grid-2'} 
-  showsVerticalScrollIndicator={false}
-  renderItem={({ item }) => {
-    const isFav = isInWishlist(item._id); // from your WishlistContext
-
-    return (
-      <TouchableOpacity
-        onPress={() => navigation.navigate('ProductScreen', { id: item._id })}
-        activeOpacity={0.8}
-        style={[
-          styles.productCard,
-          filteredProducts.length === 1 && { width: '50%' },
-        ]}
-      >
-    <TouchableOpacity
-  onPress={() =>
-    isInWishlist(item._id)
-      ? removeFromWishlist(item._id)
-      : addToWishlist(item._id)
-  }
-  style={styles.wishlistButton}
->
-  <Ionicons
-    name={isInWishlist(item._id) ? 'heart' : 'heart-outline'}
-    size={20}
-    color={isInWishlist(item._id) ? '#FF6347' : 'black'}
-  />
-</TouchableOpacity>
-        <Image
-          source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }}
-          style={styles.productImage}
-        />
-        <View style={styles.productDetails}>
-          <Text style={styles.productName} numberOfLines={2}>
-            {item.title}
-          </Text>
-          <Text style={styles.productPrice}>${item.price}</Text>
+        {/* 🏷 Section Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>NEW & POPULER</Text>
         </View>
-      </TouchableOpacity>
-    );
-  }}
-  columnWrapperStyle={
-    filteredProducts.length > 1
-      ? { justifyContent: 'space-between', marginBottom: 2 }
-      : null
-  }
-  contentContainerStyle={{
-    paddingHorizontal: 8,
-    paddingBottom: 120,
-  }}
-/>
 
+        {/* 🏷 Categories */}
+        <View style={styles.categoriesWrapper}>
+          <FlatList
+            data={categories}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={{ paddingVertical: 12 }}
+            renderItem={({ item: cat }) => (
+              <TouchableOpacity
+                style={[
+                  styles.categoryBtn,
+                  selectedCategory === cat.name
+                    ? styles.categoryBtnActive
+                    : styles.categoryBtnInactive,
+                ]}
+                onPress={() => setSelectedCategory(cat.name)}
+              >
+                <Text
+                  style={
+                    selectedCategory === cat.name
+                      ? styles.categoryTextActive
+                      : styles.categoryTextInactive
+                  }
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </View>
+    }
+    renderItem={({ item }) => {
+      const isFav = isInWishlist(item._id);
 
+      return (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ProductScreen', { id: item._id })}
+          activeOpacity={0.8}
+          style={[
+            styles.productCard,
+            filteredProducts.length === 1 && { width: '50%' },
+          ]}
+        >
+          {/* ❤️ Wishlist */}
+          <TouchableOpacity
+            onPress={() =>
+              isFav
+                ? removeFromWishlist(item._id)
+                : addToWishlist(item._id)
+            }
+            style={styles.wishlistButton}
+          >
+            <Ionicons
+              name={isFav ? 'heart' : 'heart-outline'}
+              size={20}
+              color={isFav ? '#FF6347' : 'black'}
+            />
+          </TouchableOpacity>
 
+          {/* 🖼 Product Image */}
+          <Image
+            source={{ uri: item.images[0] || 'https://via.placeholder.com/150' }}
+            style={styles.productImage}
+          />
 
+          {/* 💬 Details */}
+          <View style={styles.productDetails}>
+            <Text style={styles.productName} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <Text style={styles.productPrice}>${item.price}</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }}
+  />
 </SafeAreaView>
+
 
   );
 }
 
 const styles = StyleSheet.create({
+  sectionHeader: {
+  marginVertical: 22,
+   justifyContent: 'center',
+   display:"flex",
+ alignItems: 'center'
+},
+sectionTitle: {
+  fontSize: 28,
+  fontWeight: "700"
+  
+  
+},
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   // headerContainer: { padding: 16 },
   header: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },

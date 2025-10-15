@@ -12,7 +12,7 @@ export default function GlobalCartIcon() {
 
   return (
     <TouchableOpacity
-      onPress={() => navigation.navigate('Cart')}
+      onPress={() => navigation.navigate('CartScreen')}
       style={{
         position: 'absolute',
         top: 45,
