@@ -1,23 +1,19 @@
 // src/navigation/TabsNavigator.js
 import React, { useContext } from 'react';
-import { Alert } from 'react-native';
+import { View, Alert, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import HomeStackNavigator from './HomeStackNavigator';
-import CategoryStackNavigator from './CategoryStackNavigator';
-import FavoritesScreen from '../screens/FavoritesScreen';
-import CartScreen from '../screens/CartScreen';
+import SearchScreen from '../screens/SearchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { AuthContext } from '../context/AuthContext';
-import SearchScreen from '../screens/SearchScreen';
 
 const Tabs = createBottomTabNavigator();
 
 export default function TabsNavigator() {
   const { user } = useContext(AuthContext);
 
-  // Centralized login check for tabs
   const requireLogin = (navigation) => {
     Alert.alert(
       'Login Required',
@@ -33,50 +29,49 @@ export default function TabsNavigator() {
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: 'black',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
-        tabBarStyle: {
-          backgroundColor: '#fff',
-          height: 70,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          shadowColor: '#000',
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-          elevation: 8,
-        },
-        tabBarIcon: ({ focused, color }) => {
+        tabBarShowLabel: false,
+        tabBarStyle: styles.tabBar,
+        tabBarIcon: ({ focused }) => {
           let iconName;
+          let size = 32; // default icon size
+          let color = focused ? 'black' : 'black'; // active/inactive color
+
           switch (route.name) {
-            case 'Home': iconName = focused ? 'home' : 'home-outline'; break;
-            case 'Categories': iconName = focused ? 'grid' : 'grid-outline'; break;
-            case 'Favorites': iconName = focused ? 'heart' : 'heart-outline'; break;
-            case 'Cart': iconName = focused ? 'cart' : 'cart-outline'; break;
-            case 'Profile': iconName = focused ? 'person' : 'person-outline'; break;
-            default: iconName = 'ellipse-outline';
+            case 'Home':
+              iconName = focused ? 'home' : 'home-outline';
+              break;
+            case 'Search':
+              iconName = focused ? 'search' : 'search-outline';
+              size = 48; // bigger middle icon
+              break;
+            case 'Profile':
+              iconName = focused ? 'person' : 'person-outline';
+              break;
+            default:
+              iconName = 'ellipse-outline';
           }
-          return <Ionicons name={iconName} size={26} color={color} />;
+
+          return (
+            <View
+              style={[
+                styles.iconContainer,
+                route.name === 'Search' && styles.searchIconContainer,
+              ]}
+            >
+              <Ionicons name={iconName} size={size} color={color} />
+            </View>
+          );
         },
       })}
     >
       <Tabs.Screen name="Home" component={HomeStackNavigator} />
-      <Tabs.Screen name="Categories" component={CategoryStackNavigator} />
-      <Tabs.Screen name="Favorites" component={FavoritesScreen} />
-      <Tabs.Screen name="Cart" component={CartScreen} />
-
-      {/* Profile tab requires login */}
+      <Tabs.Screen name="Search" component={SearchScreen} />
       <Tabs.Screen
         name="Profile"
         component={ProfileScreen}
         listeners={({ navigation }) => ({
-          tabPress: e => {
+          tabPress: (e) => {
             if (!user) {
-              // Prevent default behavior
               e.preventDefault();
               requireLogin(navigation);
             }
@@ -86,3 +81,40 @@ export default function TabsNavigator() {
     </Tabs.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    bottom: '6%',
+    left: 20,
+    right: 20,
+    height: 70, // reasonable height for tab bar
+    borderRadius: 35,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    borderTopColor:"transparent"
+  },
+  iconContainer: {
+    backgroundColor: 'white',
+    width: 60,  // fixed width/height
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  searchIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+
+
+
+  
+
+});
