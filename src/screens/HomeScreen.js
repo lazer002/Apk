@@ -11,7 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { api } from '../utils/config';
+import  api  from '../utils/config';
 import { Ionicons } from '@expo/vector-icons';
 import { useWishlist } from '../context/WishlistContext';
 import { StatusBar } from 'expo-status-bar';
