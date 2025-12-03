@@ -140,40 +140,45 @@ console.log(selectedSize)
       </View>
 
       {/* Size Selection */}
-      {product.sizes && (
-        <View style={{ marginTop: 20 }}>
-          <Text style={{ fontWeight: '600', marginBottom: 6 }}>Select Size:</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {sizes.map((size) => {
-              const isAvailable = product.sizes.includes(size);
-              return (
-                <TouchableOpacity
-                  key={size}
-                  disabled={!isAvailable}
-                  onPress={() => isAvailable && setSelectedSize(size)}
-                  style={[
-                    styles.sizePill,
-                    selectedSize === size && styles.selectedSize,
-                    !isAvailable && styles.disabledSize,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      selectedSize === size && { color: '#fff' },
-                      !isAvailable && { color: '#999' },
-                    ]}
-                  >
-                    {size}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {selectedSize && (
-            <Text style={{ marginTop: 8 }}>Selected Size: {selectedSize}</Text>
-          )}
-        </View>
-      )}
+ {/* ----- SIZE SELECTION (Inventory Based) ----- */}
+{product.inventory && (
+  <View style={{ marginTop: 20 }}>
+    <Text style={{ fontWeight: '600', marginBottom: 6 }}>Select Size:</Text>
+
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {Object.entries(product.inventory).map(([size, qty]) => {
+        const isAvailable = qty > 0;
+
+        return (
+          <TouchableOpacity
+            key={size}
+            disabled={!isAvailable}
+            onPress={() => isAvailable && setSelectedSize(size)}
+            style={[
+              styles.sizePill,
+              selectedSize === size && styles.selectedSize,
+              !isAvailable && styles.disabledSize,
+            ]}
+          >
+            <Text
+              style={[
+                selectedSize === size && { color: '#fff' },
+                !isAvailable && { color: '#999' },
+              ]}
+            >
+              {size}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+
+    {selectedSize && (
+      <Text style={{ marginTop: 8 }}>Selected Size: {selectedSize}</Text>
+    )}
+  </View>
+)}
+
 
       {/* Actions */}
       <View style={{ marginTop: 20 }}>

@@ -169,6 +169,7 @@ const styles = StyleSheet.create({
     right: 20,
     height: 70,
     borderRadius: 35,
+    borderColor: 'transparent',
     backgroundColor: 'transparent',
     elevation: 0,
     borderTopColor: 'transparent',

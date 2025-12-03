@@ -1,22 +1,16 @@
 // src/components/ScreenWrapper.js
 import React from 'react';
-import { View } from 'react-native';
-import BackButton from './BackButton';
-import GlobalCartIcon from './GlobalCartIcon';
-import { useNavigationState } from '@react-navigation/native';
-
+import {  View, StyleSheet } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 export default function ScreenWrapper({ children }) {
-  const state = useNavigationState((state) => state);
-  const routeName = state?.routes[state.index]?.name;
-
-  const hideBack = ["HomeStackScreen", "Tabs", "Cart", "Favorites", "Profile", "Categories","CategoryProducts"].includes(routeName);
-  const hideCart = ["HomeStackScreen", "Cart",  "Profile", "Categories","CategoryProducts"].includes(routeName);
-
   return (
-    <View style={{ flex: 1 }}>
-      {!hideBack && <BackButton />}
-      {!hideCart && <GlobalCartIcon />}
-      {children}
-    </View>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>{children}</View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, paddingHorizontal: 16 },
+});

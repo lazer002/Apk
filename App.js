@@ -24,8 +24,6 @@ export default function App() {
               <StatusBar style="dark" />
               <RootNavigator />
             </NavigationContainer>
-
-            {/* Toasts for whole app */}
             <Toast />
           </WishlistProvider>
         </CartProvider>
