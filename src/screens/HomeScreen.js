@@ -26,7 +26,7 @@ const TABS = ['HOME', 'MENS', 'BUNDLE', 'NEW ARRIVALS'];
 
 export default function HomeScreen({ navigation }) {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { width } = useWindowDimensions(); // 👈 actual viewport width
+  const { width, height } = useWindowDimensions(); // 👈 actual viewport width
 
   const [allProducts, setAllProducts] = useState([]);
   const [bundleProducts, setBundleProducts] = useState([]);
@@ -199,39 +199,39 @@ export default function HomeScreen({ navigation }) {
 
           return (
             <View style={{ width }}>
-          {isHomePage && (
-  <Animated.FlatList
-    nestedScrollEnabled
-    data={homeBanners}
-    keyExtractor={(_, i) => i.toString()}
-    style={{ height }}                    // viewport = screen height
-    renderItem={({ item: banner }) => (
-      <Image
-        source={banner}
-        style={{ width, height }}         // each item = full screen
-        resizeMode="cover"
-      />
-    )}
-    pagingEnabled
-    snapToInterval={height}               // snap exactly 1 screen
-    decelerationRate="fast"
-    snapToAlignment="start"
-    showsVerticalScrollIndicator={false}
-    onScroll={Animated.event(
-      [{ nativeEvent: { contentOffset: { y: scrollYHome } } }],
-      { useNativeDriver: false }
-    )}
-    scrollEventThrottle={16}
-    contentContainerStyle={{
-      // no top/bottom padding for perfect paging
-    }}
-    getItemLayout={(_, index) => ({
-      length: height,
-      offset: height * index,
-      index,
-    })}
-  />
-)}
+              {isHomePage && (
+                <Animated.FlatList
+                  nestedScrollEnabled
+                  data={homeBanners}
+                  keyExtractor={(_, i) => i.toString()}
+                  style={{ height }}                    // viewport = screen height
+                  renderItem={({ item: banner }) => (
+                    <Image
+                      source={banner}
+                      style={{ width, height }}         // each item = full screen
+                      resizeMode="cover"
+                    />
+                  )}
+                  pagingEnabled
+                  snapToInterval={height}               // snap exactly 1 screen
+                  decelerationRate="fast"
+                  snapToAlignment="start"
+                  showsVerticalScrollIndicator={false}
+                  onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollYHome } } }],
+                    { useNativeDriver: false }
+                  )}
+                  scrollEventThrottle={16}
+                  contentContainerStyle={{
+                    // no top/bottom padding for perfect paging
+                  }}
+                  getItemLayout={(_, index) => ({
+                    length: height,
+                    offset: height * index,
+                    index,
+                  })}
+                />
+              )}
 
 
               {isMensPage && (
@@ -298,10 +298,10 @@ export default function HomeScreen({ navigation }) {
                   <Animated.FlatList
                     nestedScrollEnabled
                     data={bundleProducts}
-                    keyExtractor={(product) => product._id}
-                    numColumns={2}
-                    columnWrapperStyle={{ justifyContent: 'space-between' }}
-                    contentContainerStyle={styles.productList}
+                    keyExtractor={(bundle) => bundle._id}
+                    // one card per row – bundles feel better full-width
+                    numColumns={1}
+                    contentContainerStyle={styles.bundleList}
                     onScroll={Animated.event(
                       [{ nativeEvent: { contentOffset: { y: scrollYProducts } } }],
                       { useNativeDriver: false }
@@ -312,40 +312,67 @@ export default function HomeScreen({ navigation }) {
                         <Text style={styles.emptyText}>No bundles yet.</Text>
                       </View>
                     }
-                    renderItem={({ item: product }) => {
-                      const isFav = isInWishlist(product._id);
+                    renderItem={({ item: bundle }) => {
+                      const firstImage =
+                        bundle.mainImages?.[0] ??
+                        bundle.products?.[0]?.images?.[0] ??
+                        'https://via.placeholder.com/300';
+
+                      const itemsCount = bundle.products?.length || 0;
+
                       return (
-                        <View style={styles.productCard}>
+                        <View style={styles.bundleCard}>
                           <TouchableOpacity
+                            // TODO: replace "BundleScreen" with your actual bundle details route
                             onPress={() =>
-                              isFav
-                                ? removeFromWishlist(product._id)
-                                : addToWishlist(product._id)
-                            }
-                            style={styles.wishlistButton}
-                          >
-                            <Ionicons
-                              name={isFav ? 'heart' : 'heart-outline'}
-                              size={24}
-                              color={isFav ? '#FF6347' : 'black'}
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() =>
-                              navigation.navigate('ProductScreen', { id: product._id })
+                              navigation.navigate('BundleScreen', { id: bundle._id })
                             }
                           >
                             <Image
-                              source={{
-                                uri:
-                                  product.images?.[0] ||
-                                  'https://via.placeholder.com/150',
-                              }}
-                              style={styles.productImage}
+                              source={{ uri: firstImage }}
+                              style={styles.bundleMainImage}
                             />
-                            <View style={styles.productDetails}>
-                              <Text style={styles.productName}>{product.title}</Text>
-                              <Text style={styles.productPrice}>₹{product.price}</Text>
+
+                            <View style={styles.bundleContent}>
+                              <View style={styles.bundleHeaderRow}>
+                                <Text style={styles.bundleTitle}>{bundle.title}</Text>
+                                <Text style={styles.bundlePrice}>₹{bundle.price}</Text>
+                              </View>
+
+                              {!!bundle.description && (
+                                <Text
+                                  style={styles.bundleDescription}
+                                  numberOfLines={2}
+                                >
+                                  {bundle.description}
+                                </Text>
+                              )}
+
+                              <Text style={styles.bundleItemsInfo}>
+                                {itemsCount} item{itemsCount !== 1 ? 's' : ''} in this bundle
+                              </Text>
+
+                              {/* Row of included products thumbnails */}
+                              <View style={styles.bundleProductsRow}>
+                                {bundle.products?.slice(0, 3).map((prod) => (
+                                  <View key={prod._id} style={styles.bundleProductThumbWrapper}>
+                                    <Image
+                                      source={{
+                                        uri:
+                                          prod.images?.[0] ||
+                                          'https://via.placeholder.com/80',
+                                      }}
+                                      style={styles.bundleProductThumb}
+                                    />
+                                  </View>
+                                ))}
+
+                                {itemsCount > 3 && (
+                                  <Text style={styles.bundleMoreText}>
+                                    +{itemsCount - 3} more
+                                  </Text>
+                                )}
+                              </View>
                             </View>
                           </TouchableOpacity>
                         </View>
@@ -354,6 +381,7 @@ export default function HomeScreen({ navigation }) {
                   />
                 )
               )}
+
 
               {isNewArrivalsPage && (
                 <View style={[styles.emptyState, { paddingTop: height * 0.2 }]}>
@@ -446,6 +474,78 @@ const styles = StyleSheet.create({
     right: screenWidth * 0.02,
     zIndex: 10,
   },
+    bundleList: {
+    paddingHorizontal: screenWidth * 0.02,
+    paddingTop: height  * 0.02, // or HEADER_HEIGHT if you like
+    paddingBottom: height * 0.15,
+  },
+  bundleCard: {
+    backgroundColor: '#fff',
+    borderRadius: screenWidth * 0.03,
+    marginBottom: height * 0.02,
+    overflow: 'hidden',
+    borderWidth: 0.6,
+    borderColor: '#E5E7EB',
+  },
+  bundleMainImage: {
+    width: '100%',
+    height: height * 0.28,
+    resizeMode: 'cover',
+  },
+  bundleContent: {
+    padding: screenWidth * 0.03,
+  },
+  bundleHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: height * 0.007,
+  },
+  bundleTitle: {
+    fontSize: screenWidth * 0.04,
+    fontWeight: '700',
+    flex: 1,
+    marginRight: screenWidth * 0.02,
+  },
+  bundlePrice: {
+    fontSize: screenWidth * 0.042,
+    fontWeight: '800',
+  },
+  bundleDescription: {
+    fontSize: screenWidth * 0.032,
+    color: '#4B5563',
+    marginBottom: height * 0.005,
+  },
+  bundleItemsInfo: {
+    fontSize: screenWidth * 0.032,
+    fontWeight: '500',
+    color: '#111827',
+    marginBottom: height * 0.008,
+  },
+  bundleProductsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bundleProductThumbWrapper: {
+    width: screenWidth * 0.12,
+    height: screenWidth * 0.12,
+    borderRadius: screenWidth * 0.02,
+    overflow: 'hidden',
+    marginRight: screenWidth * 0.02,
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+  },
+  bundleProductThumb: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  bundleMoreText: {
+    fontSize: screenWidth * 0.032,
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+
 
   emptyState: {
     flex: 1,
