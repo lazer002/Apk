@@ -9,23 +9,65 @@ import {
   Dimensions,
   StyleSheet,
   FlatList,
-  Animated,
-  Platform,
-  UIManager,
 } from 'react-native';
-
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { api } from '../utils/config';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
+// ----------------------
+// Reusable AccordionItem
+// ----------------------
+function AccordionItem({ title, children, duration = 600 }) {
+  const [open, setOpen] = useState(false);
+  const progress = useSharedValue(0); // 0 = closed, 1 = open
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      maxHeight: progress.value * 500, // 👈 500px is "full open" height, adjust if needed
+      opacity: progress.value,
+      overflow: 'hidden',
+      transform: [
+        {
+          translateY: (1 - progress.value) * -8, // small slide while opening/closing
+        },
+      ],
+    };
+  });
+
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    progress.value = withTiming(next ? 1 : 0, {
+      duration, // 600ms now for smoother feel
+    });
+  };
+
+  return (
+    <View style={styles.accordionItem}>
+      <TouchableOpacity onPress={toggle} style={styles.accordionHeader}>
+        <Text style={{ fontWeight: '600' }}>{title}</Text>
+        <Ionicons name={open ? 'remove' : 'add'} size={20} />
+      </TouchableOpacity>
+
+      <Animated.View style={[styles.accordionAnimatedContainer, animatedStyle]}>
+        <View style={styles.accordionContent}>{children}</View>
+      </Animated.View>
+    </View>
+  );
 }
 
+
+// ----------------------
+// Product Screen
+// ----------------------
 export default function ProductScreen({ route, navigation }) {
   const { add } = useCart();
   const { id } = route.params;
@@ -35,13 +77,11 @@ export default function ProductScreen({ route, navigation }) {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [accordionOpen, setAccordionOpen] = useState({});
   const [relatedProducts, setRelatedProducts] = useState([]);
 
   const flatListRef = useRef(null);
-  const accordionAnimValues = useRef({}).current;
 
-  // Load product + related products
+  // Load product + related
   useEffect(() => {
     const loadProduct = async () => {
       try {
@@ -49,7 +89,6 @@ export default function ProductScreen({ route, navigation }) {
         const prod = res.data;
         setProduct(prod);
 
-        // fetch related products by same category (category is ID string)
         const categoryId = prod.category;
         if (categoryId) {
           try {
@@ -76,10 +115,9 @@ export default function ProductScreen({ route, navigation }) {
     };
 
     loadProduct();
-    setSelectedSize(null); // reset size when product changes
+    setSelectedSize(null);
   }, [id]);
 
-  // Image gallery handlers
   const onMomentumScrollEnd = (e) => {
     const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
     setActiveImage(newIndex);
@@ -87,29 +125,11 @@ export default function ProductScreen({ route, navigation }) {
 
   const scrollToIndex = (index) => {
     setActiveImage(index);
-    flatListRef.current?.scrollToOffset({ offset: index * width, animated: true });
+    flatListRef.current?.scrollToOffset({
+      offset: index * width,
+      animated: true,
+    });
   };
-
-  // Accordion toggle with LayoutAnimation
-const toggleAccordion = (key) => {
-  // ensure Animated.Value exists
-  if (!accordionAnimValues[key]) {
-    accordionAnimValues[key] = new Animated.Value(0);
-  }
-
-  const isOpen = !!accordionOpen[key];
-  const toValue = isOpen ? 0 : 1;
-
-  Animated.timing(accordionAnimValues[key], {
-    toValue,
-    duration: 300, // your duration
-    useNativeDriver: false, // animating maxHeight
-  }).start();
-
-  setAccordionOpen((prev) => ({ ...prev, [key]: !isOpen }));
-};
-
-
 
   if (loading) {
     return (
@@ -142,7 +162,11 @@ const toggleAccordion = (key) => {
           onMomentumScrollEnd={onMomentumScrollEnd}
           extraData={activeImage}
           renderItem={({ item }) => (
-            <Image source={{ uri: item }} style={styles.mainImage} resizeMode="cover" />
+            <Image
+              source={{ uri: item }}
+              style={styles.mainImage}
+              resizeMode="cover"
+            />
           )}
         />
 
@@ -191,10 +215,12 @@ const toggleAccordion = (key) => {
         </View>
       </View>
 
-      {/* Size Selection (Inventory Based) */}
+      {/* Size Selection */}
       {product.inventory && (
         <View style={{ marginTop: 20 }}>
-          <Text style={{ fontWeight: '600', marginBottom: 6 }}>Select Size:</Text>
+          <Text style={{ fontWeight: '600', marginBottom: 6 }}>
+            Select Size:
+          </Text>
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {Object.entries(product.inventory).map(([size, qty]) => {
@@ -267,7 +293,12 @@ const toggleAccordion = (key) => {
         <TouchableOpacity
           style={[
             styles.button,
-            { marginTop: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: 'black' },
+            {
+              marginTop: 12,
+              backgroundColor: '#fff',
+              borderWidth: 1,
+              borderColor: 'black',
+            },
           ]}
         >
           <Ionicons name="card-outline" size={20} color="black" />
@@ -303,107 +334,60 @@ const toggleAccordion = (key) => {
         </View>
       </View>
 
-      {/* Accordion Section */}
-     <View style={{ marginTop: 24 }}>
-  {['Description', 'Product Code', 'Fit & Size', 'Additional Details'].map(
-    (title, idx) => {
-      if (!accordionAnimValues[title]) {
-        accordionAnimValues[title] = new Animated.Value(
-          accordionOpen[title] ? 1 : 0,
-        );
-      }
+      {/* Accordion Section (Reanimated) */}
+      <View style={{ marginTop: 24 }}>
+        <AccordionItem title="Description" duration={450}>
+          <Text>{product.description}</Text>
+        </AccordionItem>
 
-      const anim = accordionAnimValues[title];
+        <AccordionItem title="Product Code" duration={450}>
+          <View>
+            <Text style={{ fontWeight: '600', marginBottom: 4 }}>SKU</Text>
+            <Text style={{ fontSize: 14, color: '#111' }}>
+              {product.sku ? String(product.sku) : 'N/A'}
+            </Text>
+          </View>
+        </AccordionItem>
 
-      // big enough maxHeight for any content (tweak if needed)
-      const animatedStyle = {
-        maxHeight: anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, 500], // 500px "fully open" height
-        }),
-        opacity: anim,
-        overflow: 'hidden',
-      };
+        <AccordionItem title="Fit & Size" duration={450}>
+          <View>
+            <Text style={{ marginBottom: 10 }}>
+              {product.fit || 'Standard Fit'}
+            </Text>
 
-      return (
-        <View key={idx} style={styles.accordionItem}>
-          <TouchableOpacity
-            onPress={() => toggleAccordion(title)}
-            style={styles.accordionHeader}
-          >
-            <Text style={{ fontWeight: '600' }}>{title}</Text>
-            <Ionicons
-              name={accordionOpen[title] ? 'remove' : 'add'}
-              size={20}
-            />
-          </TouchableOpacity>
+            <Text style={{ fontWeight: '600', marginBottom: 8 }}>
+              Size Guide (Unisex Oversized):
+            </Text>
 
-          <Animated.View style={[styles.accordionContent, animatedStyle]}>
-            {/* Description */}
-            {title === 'Description' && (
-              <Text>{product.description}</Text>
-            )}
+            <View style={{ marginBottom: 10 }}>
+              <Text>• XS — Chest 34-36" • Length 26"</Text>
+              <Text>• S — Chest 36-38" • Length 27"</Text>
+              <Text>• M — Chest 38-40" • Length 28"</Text>
+              <Text>• L — Chest 40-42" • Length 29"</Text>
+              <Text>• XL — Chest 42-44" • Length 30"</Text>
+              <Text>• XXL — Chest 44-46" • Length 31"</Text>
+            </View>
 
-            {/* Product Code (SKU) */}
-            {title === 'Product Code' && (
-              <View>
-                <Text style={{ fontWeight: '600', marginBottom: 4 }}>
-                  SKU
-                </Text>
-                <Text style={{ fontSize: 14, color: '#111' }}>
-                  {product.sku ? String(product.sku) : 'N/A'}
-                </Text>
-              </View>
-            )}
+            <Text style={{ fontSize: 12, color: '#666' }}>
+              Measurements may vary slightly depending on wash/fabric.
+            </Text>
+          </View>
+        </AccordionItem>
 
-            {/* Fit & Size with static size chart */}
-            {title === 'Fit & Size' && (
-              <View>
-                <Text style={{ marginBottom: 10 }}>
-                  {product.fit || 'Standard Fit'}
-                </Text>
+        <AccordionItem title="Additional Details" duration={450}>
+          <View>
+            <Text style={{ fontWeight: '600', marginBottom: 6 }}>
+              Product Highlights:
+            </Text>
 
-                <Text style={{ fontWeight: '600', marginBottom: 8 }}>
-                  Size Guide (Unisex Oversized):
-                </Text>
-
-                <View style={{ marginBottom: 10 }}>
-                  <Text>• XS — Chest 34-36" • Length 26"</Text>
-                  <Text>• S — Chest 36-38" • Length 27"</Text>
-                  <Text>• M — Chest 38-40" • Length 28"</Text>
-                  <Text>• L — Chest 40-42" • Length 29"</Text>
-                  <Text>• XL — Chest 42-44" • Length 30"</Text>
-                  <Text>• XXL — Chest 44-46" • Length 31"</Text>
-                </View>
-
-                <Text style={{ fontSize: 12, color: '#666' }}>
-                  Measurements may vary slightly depending on wash/fabric.
-                </Text>
-              </View>
-            )}
-
-            {/* Additional Details with static highlights */}
-            {title === 'Additional Details' && (
-              <View>
-                <Text style={{ fontWeight: '600', marginBottom: 6 }}>
-                  Product Highlights:
-                </Text>
-
-                <Text>• Made in India</Text>
-                <Text>• Premium 100% Cotton Fabric</Text>
-                <Text>• High-quality non-PVC prints</Text>
-                <Text>• Pre-shrunk & bio-washed</Text>
-                <Text>• Designed for everyday comfort</Text>
-              </View>
-            )}
-          </Animated.View>
-        </View>
-      );
-    },
-  )}
-</View>
-
-
+            <Text>• Made in India</Text>
+            <Text>• Premium 100% Cotton Fabric</Text>
+            <Text>• High-quality non-PVC prints</Text>
+            <Text>• Pre-shrunk & bio-washed</Text>
+            <Text>• Designed for everyday comfort</Text>
+          </View>
+        </AccordionItem>
+      </View>
 
       {/* Recommended / Similar Products */}
       {relatedProducts.length > 0 && (
@@ -512,6 +496,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 12,
+  },
+  accordionAnimatedContainer: {
+    overflow: 'hidden',
   },
   accordionContent: {
     paddingVertical: 8,
