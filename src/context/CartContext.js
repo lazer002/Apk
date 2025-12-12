@@ -67,6 +67,7 @@ export function CartProvider({ children }) {
     try {
       const { data } = await client().get('/');
       setItems(data.items || []);
+     
     } catch (err) {
       console.error(err);
       Toast.show({
@@ -77,6 +78,7 @@ export function CartProvider({ children }) {
     } finally {
       setLoading(false);
     }
+    
   };
 
   // Fetch cart when guestId is ready
@@ -277,10 +279,11 @@ export function CartProvider({ children }) {
 
   const addBundleToCart = async (bundle, selectedSizes) => {
     if (!guestId) return;
-
+    
     const allSizesSelected =
       bundle.products.every((p) => selectedSizes[p._id]) &&
       Object.keys(selectedSizes).length === bundle.products.length;
+
 
     if (!allSizesSelected) {
       Toast.show({
@@ -333,7 +336,8 @@ export function CartProvider({ children }) {
         },
       ]);
     }
-
+console.log('Adding bundle to cart with sizes:', selectedSizes);
+console.log('Bundle details:', bundle);
     try {
       await client().post('/addbundle', {
         bundleId: bundle._id,

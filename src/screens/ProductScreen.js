@@ -20,7 +20,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-const { width } = Dimensions.get('window');
+const { width,height } = Dimensions.get('window');
 
 // ----------------------
 // Reusable AccordionItem
@@ -71,6 +71,7 @@ function AccordionItem({ title, children, duration = 600 }) {
 export default function ProductScreen({ route, navigation }) {
   const { add } = useCart();
   const { id } = route.params;
+;
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -149,7 +150,26 @@ export default function ProductScreen({ route, navigation }) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff', padding: 16 }}>
-      {/* Images */}
+            <View style={styles.header}>
+         <TouchableOpacity style={styles.headerLeft} onPress={() => navigation.goBack()}>
+           <Ionicons name="chevron-back" size={30} color="#111" />
+         </TouchableOpacity>
+ 
+         <View style={styles.headerRight}>
+           <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.headerIcon}>
+             <Ionicons name="notifications-outline" size={30} color="#111" />
+           </TouchableOpacity>
+ 
+           <TouchableOpacity onPress={() => navigation.navigate('Favorites')} style={styles.headerIcon}>
+             <Ionicons name="heart-outline" size={30} color="#111" />
+           </TouchableOpacity>
+ 
+           <TouchableOpacity onPress={() => navigation.navigate('CartScreen')} style={styles.headerIcon}>
+             <Ionicons name="cart-outline" size={30} color="#111" />
+           </TouchableOpacity>
+         </View>
+ 
+       </View>
       <View>
         {/* Main swipeable image */}
         <FlatList
@@ -529,4 +549,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'black',
   },
+    header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height:  height * 0.07,
+    zIndex: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    backgroundColor: '#fff' // keep it transparent so carousel shows through if you want
+  },
+  headerLeft: { width: 48, justifyContent: 'center', alignItems: 'flex-start'},
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 19, paddingRight: 4 },
+  headerIcon: { marginLeft: 12 },
 });

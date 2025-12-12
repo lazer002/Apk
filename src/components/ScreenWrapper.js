@@ -5,6 +5,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 export default function ScreenWrapper({ children }) {
   return (
     <SafeAreaView style={styles.safe}>
+      
       <View style={styles.container}>{children}</View>
     </SafeAreaView>
   );

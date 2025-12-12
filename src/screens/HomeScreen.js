@@ -149,9 +149,15 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.topBar}>
           <View style={styles.topIcons}>
-            <Ionicons name="notifications-outline" size={32} color="black" />
-            <Ionicons name="heart-outline" size={32} color="black" />
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+              <Ionicons name="notifications-outline" size={32} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Favorites')}>
+              <Ionicons name="heart-outline" size={32} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('CartScreen')}>
             <Ionicons name="cart-outline" size={32} color="black" />
+            </TouchableOpacity>
           </View>
         </View>
 

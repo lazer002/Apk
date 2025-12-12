@@ -11,6 +11,7 @@ import OtpVerification from '../screens/OtpVerification';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ProductScreen from '../screens/ProductScreen';
+import BundleScreen from '../screens/BundleScreen'; // <- added
 import CartScreen from '../screens/CartScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -18,7 +19,7 @@ import HomeScreen from '../screens/HomeScreen';
 import CategoriesScreen from '../screens/CategoriesScreen';
 import ProductListingScreen from '../screens/ProductListingScreen';
 import ScreenWrapper from '../components/ScreenWrapper';
-
+import NotificationsScreen from '../screens/NotificationsScreen';
 import { AuthContext } from '../context/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -131,12 +132,22 @@ export default function RootNavigator() {
       <Stack.Screen name="CartScreen" component={CartScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
       <Stack.Screen name="CheckoutScreen" component={CheckoutScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
 
       {/* Product details */}
       <Stack.Screen name="ProductScreen">
         {(props) => (
           <ScreenWrapper>
             <ProductScreen {...props} />
+          </ScreenWrapper>
+        )}
+      </Stack.Screen>
+
+      {/* Bundle details (added) */}
+      <Stack.Screen name="BundleScreen">
+        {(props) => (
+          <ScreenWrapper>
+            <BundleScreen {...props} />
           </ScreenWrapper>
         )}
       </Stack.Screen>
