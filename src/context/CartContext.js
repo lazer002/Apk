@@ -3,6 +3,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useMemo
 } from 'react';
 import { useAuth } from './AuthContext';
 import api from '../utils/config';
@@ -179,6 +180,10 @@ export function CartProvider({ children }) {
   const update = async (id, quantity, size, isBundle = false) => {
     if (!guestId) return;
 
+    if (quantity <= 0) {
+      return remove(id, size, isBundle);
+    }
+
     setItems((prev) =>
       prev.map((i) => {
         if (isBundle) {
@@ -232,12 +237,6 @@ export function CartProvider({ children }) {
         await client().post('/remove', { productId: id, size });
       }
 
-      Toast.show({
-        type: 'success',
-        text1: isBundle
-          ? 'Bundle removed from cart'
-          : 'Product removed from cart',
-      });
     } catch (err) {
       console.error(err);
       Toast.show({
@@ -336,8 +335,7 @@ export function CartProvider({ children }) {
         },
       ]);
     }
-console.log('Adding bundle to cart with sizes:', selectedSizes);
-console.log('Bundle details:', bundle);
+
     try {
       await client().post('/addbundle', {
         bundleId: bundle._id,
@@ -364,6 +362,10 @@ console.log('Bundle details:', bundle);
       await refresh();
     }
   };
+const cartCount = useMemo(() => {
+  return items.reduce((sum, it) => sum + (it.quantity || 1), 0);
+}, [items]);
+
 
   const value = {
     items,
@@ -375,6 +377,7 @@ console.log('Bundle details:', bundle);
     addBundleToCart,
     clearCart,
     loading,
+    cartCount
   };
 
   return (

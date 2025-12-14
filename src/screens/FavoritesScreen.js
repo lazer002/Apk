@@ -1,148 +1,203 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useWishlist } from '../context/WishlistContext';
 import { api } from '../utils/config';
+import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 
+const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
 export default function FavoritesScreen({ navigation }) {
+  const { wishlist, removeFromWishlist } = useWishlist();
   const { add } = useCart();
-  const { wishlist, removeFromWishlist, addToWishlist, isInWishlist } = useWishlist();
+
   const [products, setProducts] = useState([]);
+  const [bundles, setBundles] = useState([]);
+
   const [sizeModalVisible, setSizeModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Fetch all products
+  /* ================= FETCH PRODUCTS + BUNDLES ================= */
+
   useEffect(() => {
-    const fetchProducts = async () => {
+    const load = async () => {
       try {
-        const res = await api.get('/api/products');
-        const items = res.data.items || [];
-        setProducts(items);
+        const [pRes, bRes] = await Promise.all([
+          api.get('/api/products'),
+          api.get('/api/bundles'),
+        ]);
+
+        setProducts(pRes.data.items || []);
+        setBundles(bRes.data.items || bRes.data || []);
       } catch (err) {
-        console.log('Failed to fetch products:', err);
+        console.log('Wishlist load error:', err);
       }
     };
-    fetchProducts();
+
+    load();
   }, []);
 
-  const wishlistProducts = useMemo(() => {
-    return products.filter(p => wishlist.includes(p._id.toString()));
-  }, [products, wishlist]);
+  /* ================= BUILD WISHLIST ITEMS ================= */
 
-  const toggleWishlist = (productId) => {
-    if (isInWishlist(productId)) removeFromWishlist(productId);
-    else addToWishlist(productId);
-  };
+  const wishlistItems = useMemo(() => {
+    const productItems = products
+      .filter((p) => wishlist.includes(p._id.toString()))
+      .map((p) => ({ ...p, _type: 'product' }));
+
+    const bundleItems = bundles
+      .filter((b) => wishlist.includes(b._id.toString()))
+      .map((b) => ({ ...b, _type: 'bundle' }));
+
+    return [...productItems, ...bundleItems];
+  }, [wishlist, products, bundles]);
+
+  /* ================= HANDLERS ================= */
 
   const openSizeModal = (product) => {
     setSelectedProduct(product);
     setSizeModalVisible(true);
   };
 
-  const renderProductCard = ({ item }) => {
-    const fav = isInWishlist(item._id);
+  const addToCartWithSize = (size) => {
+    if (!selectedProduct) return;
+
+    add(selectedProduct._id, size);
+    removeFromWishlist(selectedProduct._id); // ✅ remove after add
+    setSizeModalVisible(false);
+  };
+
+  /* ================= RENDER CARD ================= */
+
+  const renderItem = ({ item }) => {
+    const isBundle = item._type === 'bundle';
+
+    const image =
+      isBundle
+        ? item.mainImages?.[0]
+        : item.images?.[0];
 
     return (
-      <TouchableOpacity
-        onPress={() =>
-          navigation.navigate('Home', {
-            screen: 'ProductScreen',
-            params: { id: item._id },
-          })
-        }
-        activeOpacity={0.8}
-        style={styles.productCard}
-      >
-        {/* Wishlist Button */}
+      <View style={styles.card}>
         <TouchableOpacity
-          onPress={() => toggleWishlist(item._id)}
-          style={styles.wishlistButton}
+          activeOpacity={0.9}
+          onPress={() =>
+            navigation.navigate(
+              isBundle ? 'BundleScreen' : 'ProductScreen',
+              { id: item._id }
+            )
+          }
         >
-          <Ionicons
-            name={fav ? 'heart' : 'heart-outline'}
-            size={22}
-            color={fav ? '#FF6363' : '#111'}
+          <Image
+            source={{ uri: image || 'https://via.placeholder.com/300' }}
+            style={styles.image}
           />
         </TouchableOpacity>
 
-        {/* Product Image */}
-        <Image
-          source={{ uri: item.images?.[0] || 'https://via.placeholder.com/150' }}
-          style={styles.productImage}
-        />
+        {/* Remove wishlist */}
+        <TouchableOpacity
+          style={styles.heartBtn}
+          onPress={() => removeFromWishlist(item._id)}
+        >
+          <Ionicons name="heart" size={20} color="#FF4D4F" />
+        </TouchableOpacity>
 
-        {/* Product Details */}
-        <View style={styles.productDetails}>
-          <Text style={styles.productName} numberOfLines={2}>
+        <View style={styles.info}>
+          <Text numberOfLines={2} style={styles.title}>
             {item.title}
           </Text>
-          <Text style={styles.productPrice}>₹{item.price}</Text>
-          <TouchableOpacity onPress={() => openSizeModal(item)}>
-            <Ionicons name="cart-outline" size={22} color="#111" />
-          </TouchableOpacity>
+
+          <Text style={styles.price}>₹{item.price}</Text>
+
+          {isBundle ? (
+            <TouchableOpacity
+              style={styles.bundleBtn}
+              onPress={() =>
+                navigation.navigate('BundleScreen', { id: item._id })
+              }
+            >
+              <Text style={styles.bundleBtnText}>View Bundle</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.addBtn}
+              onPress={() => openSizeModal(item)}
+            >
+              <Ionicons name="cart-outline" size={16} color="#fff" />
+              <Text style={styles.addBtnText}>Add to Cart</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
+  /* ================= UI ================= */
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Favorites</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={26} color="#111" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Wishlist</Text>
+        <View style={{ width: 26 }} />
+      </View>
 
-      {wishlistProducts.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>You haven't added any favorite products yet</Text>
+      {wishlistItems.length === 0 ? (
+        <View style={styles.empty}>
+          <Ionicons name="heart-outline" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>Your wishlist is empty</Text>
         </View>
       ) : (
         <FlatList
-          data={wishlistProducts}
-          keyExtractor={(item) => item._id.toString()}
+          data={wishlistItems}
+          renderItem={renderItem}
+          keyExtractor={(item) => item._id}
           numColumns={2}
-          renderItem={renderProductCard}
-          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12 }}
-          contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 120 }}
+          columnWrapperStyle={{ gap: 12 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: 120 }}
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      {/* Size Selection Modal */}
+      {/* SIZE MODAL */}
       <Modal
         visible={sizeModalVisible}
-        transparent={true}
-        animationType="fade"
+        transparent
+        animationType="slide"
         onRequestClose={() => setSizeModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={styles.modal}>
             <Text style={styles.modalTitle}>Select Size</Text>
 
-            {/* Sizes */}
-            <View style={styles.sizeList}>
-              {(selectedProduct?.sizes && selectedProduct.sizes.length > 0
-                ? selectedProduct.sizes
-                : ['XS', 'S', 'M', 'L', 'XL', 'XXL']
-              ).map((size) => (
+            <View style={styles.sizeGrid}>
+              {SIZE_OPTIONS.map((size) => (
                 <TouchableOpacity
                   key={size}
-                  style={styles.sizeButton}
-                  onPress={() => {
-                    add(selectedProduct._id, size);
-                    setSizeModalVisible(false);
-                  }}
+                  style={styles.sizeBtn}
+                  onPress={() => addToCartWithSize(size)}
                 >
-                  <Text style={styles.sizeButtonText}>{size}</Text>
+                  <Text style={styles.sizeText}>{size}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Cancel button */}
             <TouchableOpacity
-              style={styles.modalClose}
+              style={styles.cancelBtn}
               onPress={() => setSizeModalVisible(false)}
             >
-              <Text style={styles.modalCloseText}>Cancel</Text>
+              <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -151,97 +206,151 @@ export default function FavoritesScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', paddingTop: 16 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111', marginBottom: 16 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
-  emptyText: { fontSize: 16, color: '#666', textAlign: 'center' },
+/* ================= STYLES ================= */
 
-  productCard: {
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  headerTitle: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderWidth: 0.5,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    marginHorizontal: 4,
-    overflow: 'hidden',
-    height: 300,
-  },
-  wishlistButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    zIndex: 10,
-    padding: 6,
-    borderRadius: 20,
-  },
-  productImage: {
-    width: '100%',
-    height: '80%', // 80% image
-    resizeMode: 'cover',
-  },
-  productDetails: {
-    height: '20%', // 20% details
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-  },
-  productName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111',
-  },
-  productPrice: {
-    fontSize: 14,
+    textAlign: 'center',
+    fontSize: 22,
     fontWeight: '700',
     color: '#111',
   },
 
-  modalOverlay: {
+  card: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+
+  image: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#f5f5f5',
+  },
+
+  heartBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 6,
+    elevation: 3,
+  },
+
+  info: { padding: 10 },
+
+  title: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111',
+    marginBottom: 4,
+  },
+
+  price: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111',
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+
+  addBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 6,
+    fontSize: 13,
+  },
+
+  bundleBtn: {
+    borderWidth: 1,
+    borderColor: '#111',
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+
+  bundleBtnText: {
+    fontWeight: '600',
+    color: '#111',
+  },
+
+  empty: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    width: '80%',
-    alignItems: 'center',
+
+  emptyText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#777',
   },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+
+  modal: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 16,
   },
-  sizeList: {
+
+  sizeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
+    gap: 10,
     marginBottom: 16,
   },
-  sizeButton: {
-    backgroundColor: '#111',
+
+  sizeBtn: {
+    borderWidth: 1,
+    borderColor: '#111',
+    borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 6,
-    margin: 4,
   },
-  sizeButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+
+  sizeText: { fontWeight: '600' },
+
+  cancelBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
   },
-  modalClose: {
-    backgroundColor: '#FF6363',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  modalCloseText: {
-    color: '#fff',
+
+  cancelText: {
+    color: '#FF4D4F',
     fontWeight: '600',
   },
 });

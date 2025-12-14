@@ -19,6 +19,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
+import AppHeader from '../components/AppHeader';
 
 const { width,height } = Dimensions.get('window');
 
@@ -28,7 +29,6 @@ const { width,height } = Dimensions.get('window');
 function AccordionItem({ title, children, duration = 600 }) {
   const [open, setOpen] = useState(false);
   const progress = useSharedValue(0); // 0 = closed, 1 = open
-
   const animatedStyle = useAnimatedStyle(() => {
     return {
       maxHeight: progress.value * 500, // 👈 500px is "full open" height, adjust if needed
@@ -69,7 +69,7 @@ function AccordionItem({ title, children, duration = 600 }) {
 // Product Screen
 // ----------------------
 export default function ProductScreen({ route, navigation }) {
-  const { add } = useCart();
+  const { add, cartCount } = useCart();
   const { id } = route.params;
 ;
 
@@ -150,26 +150,7 @@ export default function ProductScreen({ route, navigation }) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff', padding: 16 }}>
-            <View style={styles.header}>
-         <TouchableOpacity style={styles.headerLeft} onPress={() => navigation.goBack()}>
-           <Ionicons name="chevron-back" size={30} color="#111" />
-         </TouchableOpacity>
- 
-         <View style={styles.headerRight}>
-           <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.headerIcon}>
-             <Ionicons name="notifications-outline" size={30} color="#111" />
-           </TouchableOpacity>
- 
-           <TouchableOpacity onPress={() => navigation.navigate('Favorites')} style={styles.headerIcon}>
-             <Ionicons name="heart-outline" size={30} color="#111" />
-           </TouchableOpacity>
- 
-           <TouchableOpacity onPress={() => navigation.navigate('CartScreen')} style={styles.headerIcon}>
-             <Ionicons name="cart-outline" size={30} color="#111" />
-           </TouchableOpacity>
-         </View>
- 
-       </View>
+        <AppHeader title="Home" />
       <View>
         {/* Main swipeable image */}
         <FlatList
@@ -565,4 +546,23 @@ const styles = StyleSheet.create({
   headerLeft: { width: 48, justifyContent: 'center', alignItems: 'flex-start'},
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 19, paddingRight: 4 },
   headerIcon: { marginLeft: 12 },
+  cartBadge: {
+  position: 'absolute',
+  top: -4,
+  right: -6,
+  minWidth: 18,
+  height: 18,
+  borderRadius: 9,
+  backgroundColor: '#111',
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 4,
+},
+
+cartBadgeText: {
+  color: '#fff',
+  fontSize: 10,
+  fontWeight: '700',
+},
+
 });

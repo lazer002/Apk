@@ -18,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useAuth } from '../context/AuthContext';
 const { width } = Dimensions.get("window");
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppHeader from "../components/AppHeader";
 
 export default function CartScreen() {
   const { user } = useAuth();
@@ -49,6 +50,7 @@ export default function CartScreen() {
           { backgroundColor: isDark ? '#000' : '#fff' },
         ]}
       >
+          <AppHeader title="Home" />
         <TouchableOpacity
           style={styles.wishlistIcon}
           onPress={() => navigation.navigate('Favorites')}
@@ -102,8 +104,8 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView>
+ <AppHeader title="Home" />
       <ScrollView contentContainerStyle={styles.container}>
-
         {/* ---- CART ITEMS ---- */}
         <View style={styles.itemsContainer}>
         {items.map((it) => {
@@ -327,7 +329,7 @@ export default function CartScreen() {
           {/* CHECKOUT */}
           <TouchableOpacity
             style={styles.checkoutBtn}
-            onPress={() => navigation.navigate("Checkout")}
+            onPress={() => navigation.navigate("CheckoutScreen")}
           >
             <Text style={{ color: "#fff", fontWeight: "bold" }}>
               Proceed to Checkout

@@ -22,6 +22,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
+import AppHeader from '../components/AppHeader';
 
 const { width, height } = Dimensions.get('window');
 const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -58,7 +59,7 @@ function AccordionItem({ title, children, duration = 450 }) {
 
 export default function BundleScreen({ route, navigation }) {
   const { id } = route.params;
-  const { addBundleToCart } = useCart();
+  const { addBundleToCart, cartCount } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
 
@@ -162,29 +163,10 @@ useEffect(() => {
  
   const openProduct = (productId) => navigation.push('ProductScreen', { id: productId });
   const anyDropdownOpen = Object.values(dropdownOpen).some(Boolean);
-console.log('selectedSizes:', selectedSizes);
+console.log('cartCount:', cartCount);
   return (
     <SafeAreaView style={styles.safe}>
-           <View style={styles.header}>
-        <TouchableOpacity style={styles.headerLeft} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={30} color="#111" />
-        </TouchableOpacity>
-
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.headerIcon}>
-            <Ionicons name="notifications-outline" size={30} color="#111" />
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.navigate('Favorites')} style={styles.headerIcon}>
-            <Ionicons name="heart-outline" size={30} color="#111" />
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.navigate('CartScreen')} style={styles.headerIcon}>
-            <Ionicons name="cart-outline" size={30} color="#111" />
-          </TouchableOpacity>
-        </View>
-
-      </View>
+     {/* <AppHeader title="Home" /> */}
       <ScrollView contentContainerStyle={styles.content}>
         {anyDropdownOpen && (
           <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={closeAllDropdowns} />
@@ -542,6 +524,24 @@ const styles = StyleSheet.create({
   recommendedPrice: { fontSize: 12, color: '#111' },
 
   unpublishedBadge: { backgroundColor: '#f3f3f3', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
+cartBadge: {
+  position: 'absolute',
+  top: -4,
+  right: -6,
+  minWidth: 18,
+  height: 18,
+  borderRadius: 9,
+  backgroundColor: '#111',
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 4,
+},
+
+cartBadgeText: {
+  color: '#fff',
+  fontSize: 10,
+  fontWeight: '700',
+},
 
   // overlay to close dropdowns
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9, backgroundColor: 'transparent' },

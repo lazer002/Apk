@@ -16,6 +16,7 @@ import api from '../utils/config';
 import { Ionicons } from '@expo/vector-icons';
 import { useWishlist } from '../context/WishlistContext';
 import { StatusBar } from 'expo-status-bar';
+import { useCart } from '../context/CartContext';
 
 import b1 from '../assets/banner1.jpg';
 import b2 from '../assets/banner2.jpg';
@@ -26,6 +27,7 @@ const TABS = ['HOME', 'MENS', 'BUNDLE', 'NEW ARRIVALS'];
 
 export default function HomeScreen({ navigation }) {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { cartCount } = useCart();
   const { width, height } = useWindowDimensions(); // 👈 actual viewport width
 
   const [allProducts, setAllProducts] = useState([]);
@@ -155,8 +157,19 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity onPress={() => navigation.navigate('Favorites')}>
               <Ionicons name="heart-outline" size={32} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('CartScreen')}>
-            <Ionicons name="cart-outline" size={32} color="black" />
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CartScreen')}
+              style={styles.headerIcon}
+            >
+              <Ionicons name="cart-outline" size={30} color="#111" />
+
+              {cartCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -563,4 +576,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#555',
   },
+    cartBadge: {
+  position: 'absolute',
+  top: -4,
+  right: -6,
+  minWidth: 18,
+  height: 18,
+  borderRadius: 9,
+  backgroundColor: '#111',
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 4,
+},
+
+cartBadgeText: {
+  color: '#fff',
+  fontSize: 10,
+  fontWeight: '700',
+},
 });

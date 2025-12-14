@@ -1,108 +1,125 @@
+// src/context/WishlistContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../utils/config';
-import { useAuth } from '../context/AuthContext';
+import { Alert } from 'react-native';
+import { api } from '../utils/config'; // ✅ NAMED IMPORT (IMPORTANT)
+import { useAuth } from './AuthContext';
 
-const WishlistContext = createContext();
+const WishlistContext = createContext(null);
+
+const GUEST_KEY = 'guestWishlist_v1';
 
 export const WishlistProvider = ({ children }) => {
   const { user } = useAuth();
-  const userId = user?._id;
+  const userId = user?._id || null;
 
-  const [wishlist, setWishlist] = useState([]);
+  const [wishlist, setWishlist] = useState([]); // ['productId']
   const [loading, setLoading] = useState(false);
 
-  // Helper: load guest wishlist from AsyncStorage
+  /* ---------------- GUEST HELPERS ---------------- */
+
   const loadGuestWishlist = async () => {
     try {
-      const data = await AsyncStorage.getItem('guestWishlist');
-      setWishlist(data ? JSON.parse(data) : []);
-    } catch (err) {
-      console.log('Error loading guest wishlist:', err);
+      const raw = await AsyncStorage.getItem(GUEST_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      setWishlist(list);
+    } catch (e) {
+      console.log('Guest wishlist load error', e);
+      setWishlist([]);
     }
   };
 
-  // Save guest wishlist to AsyncStorage
   const saveGuestWishlist = async (list) => {
     try {
-      await AsyncStorage.setItem('guestWishlist', JSON.stringify(list));
-    } catch (err) {
-      console.log('Error saving guest wishlist:', err);
+      await AsyncStorage.setItem(GUEST_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.log('Guest wishlist save error', e);
     }
   };
 
-  // Fetch wishlist from server (for logged-in users)
+  /* ---------------- FETCH ---------------- */
+
   const fetchWishlist = async () => {
-    if (!userId) return loadGuestWishlist();
+    if (!userId) {
+      await loadGuestWishlist();
+      return;
+    }
 
     try {
       setLoading(true);
       const { data } = await api.get(`/api/wishlist/${userId}`);
-      setWishlist(data.wishlist || []);
-    } catch (err) {
-      console.log('Fetch wishlist error:', err);
+      setWishlist(data?.wishlist || []);
+    } catch (e) {
+      console.log('Fetch wishlist error:', e);
+      setWishlist([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Add to wishlist
+  /* ---------------- ADD ---------------- */
+
   const addToWishlist = async (productId) => {
+    if (!productId) return;
+
     if (!userId) {
-      // guest user
-      const newList = [...wishlist, productId];
-      setWishlist(newList);
-      saveGuestWishlist(newList);
-      // Alert.alert('Added', 'Product added to wishlist');
+      const updated = [...new Set([...wishlist, productId])];
+      setWishlist(updated);
+      saveGuestWishlist(updated);
       return;
     }
 
-    // logged-in user
     try {
       await api.post('/api/wishlist/add', { userId, productId });
-      fetchWishlist();
-      Alert.alert('Added', 'Product added to wishlist');
-    } catch (err) {
-      console.log('Add wishlist error:', err);
+      await fetchWishlist();
+    } catch (e) {
+      console.log('Add wishlist error:', e);
     }
   };
 
-  // Remove from wishlist
+  /* ---------------- REMOVE ---------------- */
+
   const removeFromWishlist = async (productId) => {
+    if (!productId) return;
+
     if (!userId) {
-      const newList = wishlist.filter(id => id !== productId);
-      setWishlist(newList);
-      saveGuestWishlist(newList);
-      Alert.alert('Removed', 'Product removed from wishlist');
+      const updated = wishlist.filter((id) => id !== productId);
+      setWishlist(updated);
+      saveGuestWishlist(updated);
       return;
     }
 
     try {
       await api.post('/api/wishlist/remove', { userId, productId });
-      fetchWishlist();
-      Alert.alert('Removed', 'Product removed from wishlist');
-    } catch (err) {
-      console.log('Remove wishlist error:', err);
+      await fetchWishlist();
+    } catch (e) {
+      console.log('Remove wishlist error:', e);
     }
   };
 
-  // Check if in wishlist
-  const isInWishlist = (productId) => wishlist.includes(productId);
+  /* ---------------- CHECK ---------------- */
+
+  const isInWishlist = (productId) => {
+    return wishlist.includes(productId);
+  };
+
+  /* ---------------- EFFECT ---------------- */
 
   useEffect(() => {
     fetchWishlist();
-  }, [user]);
-
+  }, [userId]);
+console.log('WishlistContext render, wishlist:', wishlist);
   return (
-    <WishlistContext.Provider value={{
-      wishlist,
-      loading,
-      addToWishlist,
-      removeFromWishlist,
-      isInWishlist,
-      fetchWishlist
-    }}>
+    <WishlistContext.Provider
+      value={{
+        wishlist,
+        loading,
+        addToWishlist,
+        removeFromWishlist,
+        isInWishlist,
+        fetchWishlist,
+      }}
+    >
       {children}
     </WishlistContext.Provider>
   );
