@@ -23,7 +23,7 @@ import b2 from '../assets/banner2.jpg';
 import b3 from '../assets/banner3.jpg';
 
 const { height, width: screenWidth } = Dimensions.get('window');
-const TABS = ['HOME', 'MENS', 'BUNDLE', 'NEW ARRIVALS'];
+const TABS = ['HOME', 'MENS', 'BUNDLE', 'NEW'];
 
 export default function HomeScreen({ navigation }) {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();

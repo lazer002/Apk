@@ -21,6 +21,7 @@ import ProductListingScreen from '../screens/ProductListingScreen';
 import ScreenWrapper from '../components/ScreenWrapper';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import { AuthContext } from '../context/AuthContext';
+import BundlePLPScreen from '../screens/BundleListingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -87,10 +88,17 @@ function TabsNavigator() {
         )}
       </Tabs.Screen>
 
-      <Tabs.Screen name="Search">
+      {/* <Tabs.Screen name="Search">
         {(props) => (
           <ScreenWrapper>
             <SearchScreen {...props} />
+          </ScreenWrapper>
+        )}
+      </Tabs.Screen> */}
+            <Tabs.Screen name="bundlePLP">
+        {(props) => (
+          <ScreenWrapper>
+            <BundlePLPScreen {...props} />
           </ScreenWrapper>
         )}
       </Tabs.Screen>

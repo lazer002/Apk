@@ -18,7 +18,7 @@ import Modal from "react-native-modal";
 import Collapsible from "react-native-collapsible";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { api } from "../utils/config";
+import  api  from "../utils/config";
 import { useWishlist } from "../context/WishlistContext";
 
 const { width, height } = Dimensions.get("window");
