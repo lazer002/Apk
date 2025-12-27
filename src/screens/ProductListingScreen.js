@@ -12,6 +12,7 @@ import { useCart } from "../context/CartContext";
 import SideFilterPanel from "../components/SideFilterPanel"; // ⭐ SAME FILTER
 import AppHeader from "../components/AppHeader";              // ⭐ SAME HEADER
 import { useFilter } from "../context/FilterContext";
+import { SafeAreaView,useSafeAreaInsets  } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get("window");
 const SIZE_OPTIONS = ["S", "M", "L", "XL", "XXL"];
@@ -26,6 +27,7 @@ export default function ProductListingScreen({ navigation }) {
 
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { add } = useCart();
+  const insets = useSafeAreaInsets();
 
   const [filterVisible, setFilterVisible] = useState(false);
 
@@ -128,7 +130,7 @@ export default function ProductListingScreen({ navigation }) {
 
 
   return (
-    <View style={styles.screen}>
+    <View style={{ flex:1, paddingTop: insets.top,backgroundColor:"#fff" }}>
       {/* ⭐ SAME Header */}
       <AppHeader title="Products" />
 

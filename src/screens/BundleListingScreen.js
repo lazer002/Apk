@@ -14,10 +14,11 @@ import SideFilterPanel from "../components/SideFilterPanel";
 
 const { width } = Dimensions.get("window");
 const SIZE_OPTIONS = ["S", "M", "L", "XL"];
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView,useSafeAreaInsets  } from 'react-native-safe-area-context';
 import { useFilter } from "../context/FilterContext";
 
 export default function BundlePLPScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { filters } = useFilter();
   const [bundles, setBundles] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
@@ -148,9 +149,8 @@ const [filterVisible, setFilterVisible] = useState(false);
       </CardContainer>
     );
   };
-
   return (
-    <View style={styles.screen} >
+    <View style={{ flex:1, paddingTop: insets.top,backgroundColor:"#fff" }}>
       <AppHeader title="Bundles" />
 
       {/* 🛠 icon-only toolbar */}

@@ -346,7 +346,7 @@ export default function CartScreen() {
 // ---- STYLES (UNCHANGED) ----
 //
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: "#f2f2f2" },
+  container: { paddingHorizontal: 16, backgroundColor: "#fff",paddingBottom:200 },
 
   emptyContainer: {
     flex: 1,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   itemsContainer: { marginBottom: 20 },
   itemCard: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: "#f2f2f2",
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
