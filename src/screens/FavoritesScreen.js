@@ -107,7 +107,7 @@ export default function FavoritesScreen({ navigation }) {
           style={styles.heartBtn}
           onPress={() => removeFromWishlist(item._id)}
         >
-          <Ionicons name="heart" size={20} color="#FF4D4F" />
+          <Ionicons name="heart" size={20} color="black" />
         </TouchableOpacity>
 
         <View style={styles.info}>

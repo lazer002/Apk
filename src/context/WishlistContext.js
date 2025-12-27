@@ -108,7 +108,7 @@ export const WishlistProvider = ({ children }) => {
   useEffect(() => {
     fetchWishlist();
   }, [userId]);
-console.log('WishlistContext render, wishlist:', wishlist);
+  
   return (
     <WishlistContext.Provider
       value={{

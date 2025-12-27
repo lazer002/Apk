@@ -14,8 +14,11 @@ import SideFilterPanel from "../components/SideFilterPanel";
 
 const { width } = Dimensions.get("window");
 const SIZE_OPTIONS = ["S", "M", "L", "XL"];
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFilter } from "../context/FilterContext";
 
 export default function BundlePLPScreen({ navigation }) {
+  const { filters } = useFilter();
   const [bundles, setBundles] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
   const [modalVisible, setModalVisible] = useState(false);
@@ -25,12 +28,7 @@ export default function BundlePLPScreen({ navigation }) {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { addBundleToCart } = useCart();
 const [filterVisible, setFilterVisible] = useState(false);
-const [filters, setFilters] = useState({
-  category: null,
-  sizes: [],
-  colors: [],
-  price: null,
-});
+
   /* 🧾 load bundles */
   useEffect(() => {
     const fetchBundles = async () => {
@@ -81,20 +79,21 @@ const [filters, setFilters] = useState({
     );
   };
 
-const filteredBundles = bundles.filter((b) => {
-  if (filters.category && b.category !== filters.category) return false;
-  if (filters.price && b.price > filters.price) return false;
+ const filteredBundles = bundles.filter(bundle => {
+   if (filters.price && bundle.price > filters.price) return false;
 
+  // check inside bundle items for size - ANY is enough
   if (filters.sizes.length > 0) {
-    const bundleSizes = b.products.flatMap(p => p.availableSizes);
-    if (!filters.sizes.some(size => bundleSizes.includes(size))) return false;
+    const sizesInBundle = bundle.items?.flatMap(i => i.sizes ?? []);
+    if (!sizesInBundle?.some(s => filters.sizes.includes(s))) return false;
   }
 
   if (filters.colors.length > 0) {
-    const bundleColors = b.products.flatMap(p => p.color);
-    if (!filters.colors.some(color => bundleColors.includes(color))) return false;
+    const colors = bundle.items?.flatMap(i => i.color ?? []);
+    if (!colors?.some(c => filters.colors.includes(c))) return false;
   }
 
+  if (filters.category && bundle.category !== filters.category) return false;
   return true;
 });
 
@@ -151,7 +150,7 @@ const filteredBundles = bundles.filter((b) => {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} >
       <AppHeader title="Bundles" />
 
       {/* 🛠 icon-only toolbar */}
@@ -224,15 +223,13 @@ const filteredBundles = bundles.filter((b) => {
           </View>
         </Pressable>
       </Modal>
-      <SideFilterPanel
+
+  <SideFilterPanel
   visible={filterVisible}
   onClose={() => setFilterVisible(false)}
-  filters={filters}
-  setFilters={setFilters}
 />
 
     </View>
-    
   );
 }
 
@@ -252,11 +249,14 @@ const styles = StyleSheet.create({
   /* card layout */
   cardWrapper:{},
 card: {
+      backgroundColor: '#fff',
   borderRadius: 10,
   overflow: "hidden",
   marginBottom: 12,
   marginHorizontal: 6,
-  width: (width / 2) - 18,     // ⭐ FIXED WIDTH GRID
+  width: (width / 2) - 18,  
+      borderWidth: 0.5,
+    borderColor: '#E5E7EB', // ⭐ FIXED WIDTH GRID
 },
 
   cardList: {

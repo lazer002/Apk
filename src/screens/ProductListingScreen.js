@@ -1,280 +1,289 @@
-// At the top, install:
-// npm install react-native-modal react-native-collapsible
-
-import React, { useState, useEffect } from "react";
+// screens/ProductListingScreen.jsx
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  ScrollView,
-  Dimensions,
-  Switch,
+  View, Text, FlatList, Image,
+  TouchableOpacity, Modal, Pressable, Dimensions, ScrollView, StyleSheet
 } from "react-native";
-import Modal from "react-native-modal";
-import Collapsible from "react-native-collapsible";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { Layout, useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
+import api from "../utils/config";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import  api  from "../utils/config";
 import { useWishlist } from "../context/WishlistContext";
+import { useCart } from "../context/CartContext";
+import SideFilterPanel from "../components/SideFilterPanel"; // ⭐ SAME FILTER
+import AppHeader from "../components/AppHeader";              // ⭐ SAME HEADER
+import { useFilter } from "../context/FilterContext";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
+const SIZE_OPTIONS = ["S", "M", "L", "XL", "XXL"];
 
-export default function ProductListingScreen({ route, navigation }) {
-  const { category } = route.params;
-  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-
+export default function ProductListingScreen({ navigation }) {
+  const {filters}= useFilter();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid");
-  const [searchText, setSearchText] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("ALL");
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
 
-  const filters = ["ALL", "NEW", "POLO", "BASICS", "OVERSIZED"];
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { add } = useCart();
 
-  // Accordion states
-  const [brandCollapsed, setBrandCollapsed] = useState(true);
-  const [sizeCollapsed, setSizeCollapsed] = useState(true);
-  const [colorCollapsed, setColorCollapsed] = useState(true);
+  const [filterVisible, setFilterVisible] = useState(false);
 
-  // Filter selections
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const [selectedSizes, setSelectedSizes] = useState([]);
-  const [selectedColors, setSelectedColors] = useState([]);
+  // 🔔 same touch animation as bundle PLP
+  const CardContainer = ({ children }) => {
+    const scale = useSharedValue(1);
+    const anim = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }]
+    }));
+    return (
+      <Animated.View
+        style={[anim]}
+        onTouchStart={() => scale.value = withTiming(0.97, { duration: 120 })}
+        onTouchEnd={() => scale.value = withTiming(1, { duration: 120 })}
+      >
+        {children}
+      </Animated.View>
+    );
+  };
 
-  const availableBrands = ["Nike", "Adidas", "Puma", "Reebok"];
-  const availableSizes = ["S", "M", "L", "XL"];
-  const availableColors = ["Red", "Blue", "Black", "White"];
-
+  /* 📦 Fetch products */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setLoading(true);
-        const res = await api.get(`/api/products?category=${category.name}`);
-        setProducts(res.data.items || []);
-      } catch (err) {
-        console.error(err);
-        setProducts([]);
-      } finally {
-        setLoading(false);
+        const res = await api.get(`/api/products`);
+        setProducts(res.data.items ?? []);
+      } catch (e) {
+        console.log("Product API error:", e);
       }
     };
     fetchProducts();
-  }, [category]);
+  }, []);
 
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.title.toLowerCase().includes(searchText.toLowerCase());
-    const matchesFilter =
-      selectedFilter === "ALL" || (p.tags && p.tags.includes(selectedFilter));
+  /* ❤️ wishlist */
+  const toggleWishlist = (id) =>
+    isInWishlist(id) ? removeFromWishlist(id) : addToWishlist(id);
 
-    const matchesBrand =
-      selectedBrands.length === 0 || selectedBrands.includes(p.brand);
-    const matchesSize =
-      selectedSizes.length === 0 || p.sizes?.some((s) => selectedSizes.includes(s));
-    const matchesColor =
-      selectedColors.length === 0 || selectedColors.includes(p.color);
+  /* 🛒 add product */
+  const openModal = (product) => {
+    setSelectedProduct(product);
+    setSelectedSize(null);
+    setModalVisible(true);
+  };
 
-    return matchesSearch && matchesFilter && matchesBrand && matchesSize && matchesColor;
+
+
+
+
+  /* 🔍 product card */
+  const ProductCard = ({ item }) => {
+    const img = item.images?.[0];
+    const wish = isInWishlist(item._id);
+
+    return (
+      <CardContainer>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={[styles.card, viewMode === "list" && styles.cardList]}
+          onPress={() => navigation.navigate("ProductScreen", { id: item._id })}
+        >
+          {/* 🖼 image */}
+          <Image
+            source={{ uri: img }}
+            style={viewMode === "grid" ? styles.imageGrid : styles.imageList}
+          />
+
+          {/* ❤️ */}
+          <TouchableOpacity style={styles.wishlistIcon} onPress={() => toggleWishlist(item._id)}>
+            {wish
+              ? <Ionicons name="heart-sharp" size={22} color="#000" />
+              : <Ionicons name="heart-outline" size={22} color="#000" />}
+          </TouchableOpacity>
+
+          <View style={styles.infoBox}>
+            {/* 🏷 title */}
+            <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+
+            {/* 💰 price */}
+            <Text style={styles.price}>₹{item.price}</Text>
+
+            {/* 🛒 cart icon to open modal */}
+            <TouchableOpacity style={styles.cartIcon} onPress={() => openModal(item)}>
+              <MaterialIcons name="add-shopping-cart" size={24} color="black" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </CardContainer>
+    );
+  };
+
+   const filteredProducts = products.filter((item) => {
+    if (filters.price && item.price > filters.price) return false;
+    if (filters.sizes.length > 0 && !item.sizes?.some(s => filters.sizes.includes(s)))
+      return false;
+    if (filters.colors.length > 0 && !filters.colors.includes(item.color))
+      return false;
+    if (filters.category && item.category !== filters.category) return false;
+    return true;
   });
 
-  const toggleSelection = (value, list, setList) => {
-    if (list.includes(value)) {
-      setList(list.filter((i) => i !== value));
-    } else {
-      setList([...list, value]);
-    }
-  };
-
-  const renderProduct = ({ item }) => {
-    const isFav = isInWishlist(item._id);
-    return (
-      <TouchableOpacity
-        onPress={() => navigation.navigate("ProductScreen", { id: item._id })}
-        activeOpacity={0.8}
-        style={[styles.productCard, viewMode === "list" && styles.listCard]}
-      >
-        <TouchableOpacity
-          style={styles.wishlistIcon}
-          onPress={() => (isFav ? removeFromWishlist(item._id) : addToWishlist(item._id))}
-        >
-          <Ionicons
-            name={isFav ? "heart" : "heart-outline"}
-            size={viewMode === "list" ? 30 : 22}
-            color={isFav ? "#FF6363" : "black"}
-          />
-        </TouchableOpacity>
-
-        <Image
-          source={{ uri: item.images[0] || "https://via.placeholder.com/200" }}
-          style={viewMode === "list" ? styles.listImage : styles.productImage}
-        />
-
-        <View style={styles.productDetails}>
-          <Text style={styles.productName} numberOfLines={2}>
-            {item.title}
-          </Text>
-          <View style={styles.priceContainer}>
-            {item.oldPrice && <Text style={styles.oldPrice}>₹{item.oldPrice}</Text>}
-            <Text style={styles.productPrice}>₹{item.price}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loader}>
-        <ActivityIndicator color="#000" size="large" />
-      </SafeAreaView>
-    );
-  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={32} />
+    <View style={styles.screen}>
+      {/* ⭐ SAME Header */}
+      <AppHeader title="Products" />
+
+      {/* ⭐ SAME Toolbar */}
+      <View style={styles.toolbar}>
+        <TouchableOpacity onPress={() => setFilterVisible(true)}>
+          <Ionicons name="filter-outline" size={22} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{category.name.toUpperCase()}</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("SearchScreen")}>
-          <Ionicons name="search-outline" size={32} />
+
+        <TouchableOpacity onPress={() => setViewMode(viewMode === "grid" ? "list" : "grid")}>
+          {viewMode === "grid"
+            ? <MaterialIcons name="view-agenda" size={26} color="#000" />
+            : <MaterialIcons name="grid-view" size={26} color="#000" />}
         </TouchableOpacity>
       </View>
 
-      {/* Filters Horizontal */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterContainer}
-      >
-        {filters.map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterButton, selectedFilter === f && styles.filterButtonActive]}
-            onPress={() => setSelectedFilter(f)}
-          >
-            <Text style={[styles.filterText, selectedFilter === f && styles.filterTextActive]}>
-              {f}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Icon Bar */}
-      <View style={styles.iconBar}>
-        <MaterialIcons
-          name={viewMode === "grid" ? "grid-view" : "view-agenda"}
-          size={32}
-          onPress={() => setViewMode((prev) => (prev === "grid" ? "list" : "grid"))}
+      {/* ⭐ SAME layout list */}
+      <Animated.View layout={Layout} style={{ flex: 1 }}>
+        <FlatList
+          data={filteredProducts}
+          renderItem={({ item }) => <ProductCard item={item} />}
+          key={viewMode}
+          numColumns={viewMode === "grid" ? 2 : 1}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 70 }}
         />
-           <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
-          <Ionicons name="options-outline" size={32} />
-        </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      {/* Product List */}
-      <FlatList
-        data={filteredProducts}
-        keyExtractor={(item) => item._id}
-        numColumns={viewMode === "grid" ? 2 : 1}
-        renderItem={renderProduct}
-        columnWrapperStyle={viewMode === "grid" ? { justifyContent: "space-between" } : null}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: viewMode === "grid" ? 80 : 10, minHeight: height }}
-        key={viewMode}
-      />
+      {/* ⭐ SIDE FILTER SAME COMPONENT */}
+  <SideFilterPanel
+  visible={filterVisible}
+  onClose={() => setFilterVisible(false)}
+/>
 
-      {/* ===== Bottom Filter Modal ===== */}
-      <Modal
-        isVisible={filterModalVisible}
-        onBackdropPress={() => setFilterModalVisible(false)}
-        style={{ justifyContent: "flex-end", margin: 0 }}
-      >
-        <View style={styles.modalContent}>
-          <ScrollView>
-            {/* Brand */}
-            <TouchableOpacity onPress={() => setBrandCollapsed(!brandCollapsed)}>
-              <Text style={styles.accordionTitle}>Brand</Text>
+      {/* ⭐ PRODUCT SIZE MODAL */}
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
+          <View style={styles.modalBox}>
+            <Image source={{ uri: selectedProduct?.images?.[0] }} style={styles.modalImg} />
+
+            <Text style={styles.modalTitle}>{selectedProduct?.title}</Text>
+            <Text style={styles.modalPrice}>₹{selectedProduct?.price}</Text>
+
+            <Text style={styles.modalLabel}>Select Size</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.sizeRow}>
+                {SIZE_OPTIONS.map(size => (
+                  <TouchableOpacity
+                    key={size}
+                    style={[
+                      styles.sizeBtn,
+                      selectedSize === size && styles.sizeBtnActive
+                    ]}
+                    onPress={() => setSelectedSize(size)}
+                  >
+                    <Text style={[
+                      styles.sizeTxt,
+                      selectedSize === size && { color: "#fff" }
+                    ]}>
+                      {size}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity style={styles.addCartBtn} onPress={() => {
+              if (!selectedSize) return alert("Select size");
+              add(selectedProduct,selectedSize);
+              setModalVisible(false);
+              setSelectedSize(null);
+            }}>
+              <Text style={styles.addCartTxt}>Add to Cart</Text>
             </TouchableOpacity>
-            <Collapsible collapsed={brandCollapsed}>
-              {availableBrands.map((b) => (
-                <View key={b} style={styles.checkboxContainer}>
-                  <Text>{b}</Text>
-                  <Switch
-                    value={selectedBrands.includes(b)}
-                    onValueChange={() => toggleSelection(b, selectedBrands, setSelectedBrands)}
-                  />
-                </View>
-              ))}
-            </Collapsible>
-
-            {/* Size */}
-            <TouchableOpacity onPress={() => setSizeCollapsed(!sizeCollapsed)}>
-              <Text style={styles.accordionTitle}>Size</Text>
-            </TouchableOpacity>
-            <Collapsible collapsed={sizeCollapsed}>
-              {availableSizes.map((s) => (
-                <View key={s} style={styles.checkboxContainer}>
-                  <Text>{s}</Text>
-                  <Switch
-                    value={selectedSizes.includes(s)}
-                    onValueChange={() => toggleSelection(s, selectedSizes, setSelectedSizes)}
-                  />
-                </View>
-              ))}
-            </Collapsible>
-
-            {/* Color */}
-            <TouchableOpacity onPress={() => setColorCollapsed(!colorCollapsed)}>
-              <Text style={styles.accordionTitle}>Color</Text>
-            </TouchableOpacity>
-            <Collapsible collapsed={colorCollapsed}>
-              {availableColors.map((c) => (
-                <View key={c} style={styles.checkboxContainer}>
-                  <Text>{c}</Text>
-                  <Switch
-                    value={selectedColors.includes(c)}
-                    onValueChange={() => toggleSelection(c, selectedColors, setSelectedColors)}
-                  />
-                </View>
-              ))}
-            </Collapsible>
-          </ScrollView>
-        </View>
+          </View>
+        </Pressable>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
+
+/* 🎨 SAME styles from Bundle PLP */
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 10, backgroundColor: "#F9FAFB" },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },
-  headerTitle: { fontSize: 28, fontWeight: "700" },
-  filterContainer: { paddingVertical: 12, height: 67 },
-  filterButton: { backgroundColor: "#E5E7EB", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 25, marginRight: 12, minWidth: 60, justifyContent: "center", alignItems: "center" },
-  filterButtonActive: { backgroundColor: "#111827" },
-  filterText: { fontSize: 14, fontWeight: "500", color: "#111827" },
-  filterTextActive: { color: "white" },
-  iconBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10, borderTopWidth: 1, borderTopColor: "#E5E7EB", paddingTop: 8, paddingHorizontal: 5 },
-  productCard: { flex: 1, marginHorizontal: 5, backgroundColor: "#fff", borderRadius: 10, borderWidth: 0.5, borderColor: "#E5E7EB", overflow: "hidden", height: 300 },
-  listCard: { flex: 1, flexDirection: "column", borderWidth: 0.5, borderColor: "#E5E7EB", borderRadius: 10, overflow: "hidden", backgroundColor: "#fff", marginBottom: 12, height: height * 0.75, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  wishlistIcon: { position: "absolute", top: 8, right: 8, zIndex: 10 },
-  productImage: { width: "100%", height: "80%", resizeMode: "cover" },
-  listImage: { width: "100%", height: "85%", resizeMode: "cover" },
-  productDetails: { flex: 1, paddingVertical: 8, paddingHorizontal: 10, justifyContent: "space-between", backgroundColor: "#fff" },
-  productName: { fontSize: 16, fontWeight: "600", color: "#111827" },
-  productPrice: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  priceContainer: { flexDirection: "row", alignItems: "center", gap: 8 },
-  oldPrice: { color: "#888", textDecorationLine: "line-through", fontSize: 12 },
-  modalContent: { backgroundColor: "#fff", padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: height * 0.7 },
-  accordionTitle: { fontSize: 18, fontWeight: "600", paddingVertical: 10 },
-  checkboxContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 5 },
+  screen: { flex: 1, backgroundColor: "#fff" },
+
+  toolbar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: "#ddd"
+  },
+
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 12,
+    marginHorizontal: 6,
+    width: (width / 2) - 18,
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+  },
+
+  cardList: {
+    width: width - 18,
+    flexDirection: "row",
+  },
+
+  imageGrid: {
+    width: "100%",
+    height: (width / 2) * 1.4,
+    resizeMode: "cover",
+  },
+
+  imageList: {
+    width: (width / 2) - 18,
+    height: width * 0.9,
+    resizeMode: "cover",
+  },
+
+  wishlistIcon: { position: "absolute", top: 10, right: 10 },
+
+  infoBox: { padding: 12, position: "relative" },
+  title: { fontSize: 18, fontWeight: "800" },
+  price: { fontSize: 22, fontWeight: "900", marginVertical: 6 },
+
+  /* 🛒 cart icon */
+  cartIcon: {
+    position: "absolute",
+    right: 12,
+    bottom: 12,
+    padding: 4,
+  },
+
+  /* ===== MODAL ===== */
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    padding: 20
+  },
+  modalBox: { backgroundColor: "#fff", borderRadius: 16, padding: 16 },
+  modalImg: { width: "100%", height: 320, borderRadius: 12, backgroundColor: "#eee" },
+  modalTitle: { fontSize: 20, fontWeight: "900", marginTop: 6 },
+  modalPrice: { fontSize: 18, fontWeight: "800", marginBottom: 8 },
+  modalLabel: { marginTop: 12, fontWeight: "700" },
+
+  sizeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  sizeBtn: { borderWidth: 1, borderColor: "#000", paddingVertical: 6, paddingHorizontal: 16, borderRadius: 8 },
+  sizeBtnActive: { backgroundColor: "#000" },
+  sizeTxt: { fontWeight: "800", color: "#000" },
+
+  addCartBtn: { backgroundColor: "#000", paddingVertical: 16, borderRadius: 10, marginTop: 16 },
+  addCartTxt: { color: "#fff", fontWeight: "900", fontSize: 16, textAlign: "center" },
 });
- 
