@@ -1,11 +1,18 @@
 // src/navigation/TabsNavigator.js
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Pressable,
+  Platform,
+  TouchableWithoutFeedback 
+} from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-
-// ⭐ Reanimated
+import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,12 +20,6 @@ import Animated, {
   withSpring,
   runOnJS,
 } from "react-native-reanimated";
-
-// ⭐ Haptics
-import * as Haptics from "expo-haptics";
-
-// ⭐ Blur
-import { BlurView } from "expo-blur";
 
 import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
@@ -29,45 +30,37 @@ const Tabs = createBottomTabNavigator();
 export default function TabsNavigator() {
   const navigation = useNavigation();
 
-  // 🧠 NEW: track last selected mode (cube/product)
+  // current icon showing NEXT page user will go after tap
   const [modeIcon, setModeIcon] = useState("cube-outline");
 
-  // 🔁 animation values
+  // animations
   const flip = useSharedValue(0);
   const pulse = useSharedValue(1);
   const wingsOpen = useSharedValue(0);
   const wingLeft = useSharedValue(0);
   const wingRight = useSharedValue(0);
   const backdropOpacity = useSharedValue(0);
-
-  // 🎨 ICON CROSSFADE
   const iconOpacity = useSharedValue(1);
-  const crossfadeAnim = useAnimatedStyle(() => ({
-    opacity: iconOpacity.value,
-  }));
 
-  const fadeIconChange = (newIcon) => {
-    iconOpacity.value = withTiming(0, { duration: 120 }, () => {
-      runOnJS(setModeIcon)(newIcon);
-      iconOpacity.value = withTiming(1, { duration: 120 });
-    });
-  };
+  // ====== ANIMATED STYLES ====== //
 
-  // 🎬 flip style
   const flipAnim = useAnimatedStyle(() => ({
     transform: [{ rotateY: `${flip.value}deg` }],
   }));
 
-  // 💗 pulse
   const pulseAnim = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
+  }));
+
+  const crossfadeAnim = useAnimatedStyle(() => ({
+    opacity: iconOpacity.value,
   }));
 
   const wingLeftAnim = useAnimatedStyle(() => ({
     opacity: wingsOpen.value,
     transform: [
       { translateX: wingLeft.value * wingsOpen.value },
-      { translateY: -30 * wingsOpen.value },
+      { translateY: -38 * wingsOpen.value },
     ],
   }));
 
@@ -75,7 +68,7 @@ export default function TabsNavigator() {
     opacity: wingsOpen.value,
     transform: [
       { translateX: wingRight.value * wingsOpen.value },
-      { translateY: -30 * wingsOpen.value },
+      { translateY: -38 * wingsOpen.value },
     ],
   }));
 
@@ -83,7 +76,8 @@ export default function TabsNavigator() {
     opacity: backdropOpacity.value,
   }));
 
-  // 💗 pulse loop
+  // ====== EFFECTS ====== //
+
   const pulseLoop = () => {
     pulse.value = withTiming(1.08, { duration: 900 }, () => {
       pulse.value = withTiming(1, { duration: 900 }, () => {
@@ -93,21 +87,28 @@ export default function TabsNavigator() {
   };
   useEffect(() => pulseLoop(), []);
 
-  // 🔧 flip logic
-  const runFlip = (callback) => {
+  // ====== HELPERS ====== //
+
+  const fadeIconChange = (newIcon) => {
+    iconOpacity.value = withTiming(0, { duration: 120 }, () => {
+      runOnJS(setModeIcon)(newIcon);
+      iconOpacity.value = withTiming(1, { duration: 120 });
+    });
+  };
+
+  const runFlip = (cb) => {
     flip.value = withTiming(90, { duration: 130 }, () => {
       flip.value = withTiming(180, { duration: 130 }, () => {
         flip.value = 0;
-        if (callback) runOnJS(callback)();
+        if (cb) runOnJS(cb)();
       });
     });
   };
 
-  // 🪽 wings + backdrop
   const openWings = () => {
     wingsOpen.value = withSpring(1);
-    wingLeft.value = withSpring(-80);
-    wingRight.value = withSpring(80);
+    wingLeft.value = withSpring(-82);
+    wingRight.value = withSpring(82);
     backdropOpacity.value = withTiming(1, { duration: 200 });
   };
 
@@ -116,36 +117,34 @@ export default function TabsNavigator() {
     backdropOpacity.value = withTiming(0, { duration: 200 });
   };
 
-  // 🎛 actions
-// 🎯 single tap toggles destination & flips icon
-const handleTap = () => {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // ====== USER INTERACTION ====== //
 
-  // if wings are open → close them instead
-  if (wingsOpen.value === 1) {
-    closeWings();
-    return;
-  }
+  // short tap → toggle screens
+  const handleTap = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-  if (modeIcon === "shirt-outline") {
-    // icon shows PRODUCT → go to product
-    runFlip(() => {
-      navigation.navigate("ProductListingScreen");
-      fadeIconChange("cube-outline");  // prepare next navigation
-    });
-  } 
-  else {
-    // icon shows BUNDLE → go to bundle
-    runFlip(() => {
-      navigation.navigate("BundleListingScreen");
-      fadeIconChange("shirt-outline"); // prepare next navigation
-    });
-  }
-};
+    if (wingsOpen.value === 1) {
+      closeWings();
+      return;
+    }
 
+    if (modeIcon === "shirt-outline") {
+      runFlip(() => {
+        navigation.navigate("ProductListingScreen");
+        fadeIconChange("cube-outline");
+      });
+    } else {
+      runFlip(() => {
+        navigation.navigate("BundleListingScreen");
+        fadeIconChange("shirt-outline");
+      });
+    }
+  };
 
+  // long press → wings
   const handleLongPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     if (wingsOpen.value === 0) {
       runFlip(openWings);
     } else {
@@ -153,9 +152,37 @@ const handleTap = () => {
     }
   };
 
-  return (
-    <>
-      {/* NORMAL TABS */}
+return (
+  <TouchableWithoutFeedback
+    onPress={(e) => {
+      // if wings closed → do nothing
+      if (wingsOpen.value === 0) return;
+
+      // get tap location
+      const { locationX, locationY } = e.nativeEvent;
+
+      // detect tap inside FAB area (do NOT close wings)
+      if (locationY > 520 && locationY < 620 && locationX > 140 && locationX < 260) {
+        return;
+      }
+
+      // detect tap inside left wing area
+      if (locationY > 470 && locationY < 570 && locationX > 90 && locationX < 170) {
+        return;
+      }
+
+      // detect tap inside right wing area
+      if (locationY > 470 && locationY < 570 && locationX > 230 && locationX < 310) {
+        return;
+      }
+
+      // otherwise → close wings
+      closeWings();
+    }}
+  >
+    <View style={{ flex: 1 }}>
+      {/* ===== YOUR EXISTING JSX BELOW IS UNCHANGED ===== */}
+
       <Tabs.Navigator
         screenOptions={{
           headerShown: false,
@@ -180,93 +207,102 @@ const handleTap = () => {
         </Tabs.Screen>
       </Tabs.Navigator>
 
-      {/* 🩶 BACKDROP BLUR */}
       <Animated.View
         pointerEvents={wingsOpen.value === 1 ? "auto" : "none"}
         style={[StyleSheet.absoluteFill, backdropAnim]}
       >
-        <Pressable style={{ flex: 1 }} onPress={closeWings}>
-          <BlurView intensity={50} tint="dark" style={{ flex: 1 }} />
-        </Pressable>
+        <BlurView intensity={40} tint="dark" style={{ flex: 1 }} />
       </Animated.View>
 
-      {/* ⭐ FAB + WINGS */}
-      <View style={styles.centerButtonContainer} pointerEvents="box-none">
-        {/* LEFT */}
-        <Animated.View style={[styles.miniButton, wingLeftAnim]}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              closeWings();
-              fadeIconChange("cube-outline");
-              navigation.navigate("BundleListingScreen");
-            }}
-          >
-            <Ionicons name="cube" size={22} color="#000" />
-          </TouchableOpacity>
-        </Animated.View>
+      {/* FAB + Wings stay same */}
+  <View style={styles.centerContainer} pointerEvents="box-none">
 
-        {/* RIGHT */}
-        <Animated.View style={[styles.miniButton, wingRightAnim]}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              closeWings();
-              fadeIconChange("shirt-outline");
-              navigation.navigate("ProductListingScreen");
-            }}
-          >
-            <Ionicons name="shirt" size={22} color="#000" />
-          </TouchableOpacity>
-        </Animated.View>
+  {/* LEFT WING */}
+  <Animated.View style={[styles.wing, wingLeftAnim]}>
+    <TouchableOpacity
+      onPress={() => {
+        closeWings();
+        fadeIconChange("cube-outline");
+        navigation.navigate("BundleListingScreen");
+      }}
+    >
+      <Ionicons name="cube" size={22} color="#000" />
+    </TouchableOpacity>
+  </Animated.View>
 
-        {/* MAIN */}
-        <TouchableOpacity activeOpacity={1} onPress={handleTap} onLongPress={handleLongPress}>
-          <Animated.View style={[styles.centerButton, pulseAnim, flipAnim]}>
-            <Animated.View style={crossfadeAnim}>
-              <Ionicons name={modeIcon} size={32} color="#000" />
-            </Animated.View>
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
+  {/* RIGHT WING */}
+  <Animated.View style={[styles.wing, wingRightAnim]}>
+    <TouchableOpacity
+      onPress={() => {
+        closeWings();
+        fadeIconChange("shirt-outline");
+        navigation.navigate("ProductListingScreen");
+      }}
+    >
+      <Ionicons name="shirt" size={22} color="#000" />
+    </TouchableOpacity>
+  </Animated.View>
+
+  {/* MAIN FAB */}
+  <TouchableOpacity
+    activeOpacity={1}
+    onPress={handleTap}
+    onLongPress={handleLongPress}
+  >
+    <Animated.View style={[styles.fab, pulseAnim, flipAnim]}>
+      <Animated.View style={crossfadeAnim}>
+        <Ionicons name={modeIcon} size={32} color="#000" />
+      </Animated.View>
+    </Animated.View>
+  </TouchableOpacity>
+
+</View>
+
+    </View>
+  </TouchableWithoutFeedback>
+);
+
+
 }
 
-// ---------- STYLES ---------- //
+// ====== STYLES ====== //
+
 const styles = StyleSheet.create({
   tabBar: {
     position: "absolute",
-    bottom: "6%",
+    bottom: "5%",
     left: 20,
     right: 20,
-    height: 70,
-    borderRadius: 35,
+    height: 68,
+    borderRadius: 30,
     backgroundColor: "#fff",
     borderTopWidth: 0,
+    elevation: 6,
   },
-  centerButtonContainer: {
+
+  centerContainer: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: "6%",
+    bottom: "5%",
     alignItems: "center",
   },
-  centerButton: {
+
+  fab: {
     backgroundColor: "#fff",
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: "center",
     alignItems: "center",
-
     shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 9,
   },
-  miniButton: {
+
+  wing: {
     position: "absolute",
     width: 52,
     height: 52,
@@ -278,6 +314,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 6,
   },
 });
