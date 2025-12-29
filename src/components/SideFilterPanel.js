@@ -1,5 +1,5 @@
 // components/SideFilterPanel.jsx
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -11,21 +11,35 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  withTiming,
+  useSharedValue,
+  useAnimatedStyle,
+  useDerivedValue,
+} from "react-native-reanimated";
 import { useFilter } from "../context/FilterContext";
-import Animated, { withTiming, useSharedValue, useAnimatedStyle } from "react-native-reanimated";
+
 const { width } = Dimensions.get("window");
 
 export default function SideFilterPanel({ visible, onClose }) {
   const { filters, setFilters, resetFilters } = useFilter();
-const translateX = useSharedValue(-width);
 
-useEffect(() => {
-  translateX.value = visible ? withTiming(0, { duration: 320 }) : withTiming(-width, { duration: 260 });
-}, [visible]);
+  // 🔧 shared value
+  const translateX = useSharedValue(-width);
 
-const animatedStyle = useAnimatedStyle(() => ({
-  transform: [{ translateX: translateX.value }],
-}));
+  // 🔥 FIX: move animation logic to worklet
+  useDerivedValue(() => {
+    translateX.value = visible
+      ? withTiming(0, { duration: 320 })
+      : withTiming(-width, { duration: 260 });
+  }, [visible]);
+
+  // 🎨 animated style
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  // --- filter options ---
   const sizeOptions = ["S", "M", "L", "XL", "XXL"];
   const colorOptions = ["Black", "White", "Blue", "Red"];
   const priceOptions = [499, 999, 1499, 1999, 2499];
@@ -50,9 +64,11 @@ const animatedStyle = useAnimatedStyle(() => ({
 
   return (
     <Modal visible={visible} transparent animationType="fade">
+      {/* overlay */}
       <Pressable style={styles.overlay} onPress={onClose}>
+        {/* sliding panel */}
         <Animated.View style={[styles.panel, animatedStyle]}>
-          {/* HEADER */}
+          {/* header */}
           <View style={styles.header}>
             <Text style={styles.title}>Filters</Text>
             <TouchableOpacity onPress={onClose}>
@@ -60,8 +76,10 @@ const animatedStyle = useAnimatedStyle(() => ({
             </TouchableOpacity>
           </View>
 
+          {/* body */}
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* SIZES */}
+
+            {/* Sizes */}
             <Text style={styles.section}>Sizes</Text>
             <View style={styles.row}>
               {sizeOptions.map((size) => (
@@ -85,7 +103,7 @@ const animatedStyle = useAnimatedStyle(() => ({
               ))}
             </View>
 
-            {/* COLORS */}
+            {/* Colors */}
             <Text style={styles.section}>Colors</Text>
             <View style={styles.row}>
               {colorOptions.map((color) => (
@@ -109,7 +127,7 @@ const animatedStyle = useAnimatedStyle(() => ({
               ))}
             </View>
 
-            {/* PRICE */}
+            {/* Price */}
             <Text style={styles.section}>Price Below</Text>
             <View style={styles.row}>
               {priceOptions.map((amount) => (
@@ -133,15 +151,12 @@ const animatedStyle = useAnimatedStyle(() => ({
               ))}
             </View>
 
-            {/* CLEAR */}
-            <TouchableOpacity
-              style={styles.clearBtn}
-              onPress={() => resetFilters()}
-            >
+            {/* Clear */}
+            <TouchableOpacity style={styles.clearBtn} onPress={resetFilters}>
               <Text style={styles.clearBtnText}>Clear Filters</Text>
             </TouchableOpacity>
 
-            {/* APPLY */}
+            {/* Apply */}
             <TouchableOpacity style={styles.applyBtn} onPress={onClose}>
               <Text style={styles.applyBtnText}>Apply</Text>
             </TouchableOpacity>
@@ -156,8 +171,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
   },
 
   panel: {
@@ -181,6 +194,7 @@ const styles = StyleSheet.create({
   section: { marginTop: 16, marginBottom: 8, fontSize: 15, fontWeight: "700" },
 
   row: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+
   chip: {
     borderWidth: 1,
     borderColor: "#000",

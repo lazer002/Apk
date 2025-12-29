@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from '../context/AuthContext';
 const { width } = Dimensions.get("window");
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from "../components/AppHeader";
 
 export default function CartScreen() {
@@ -42,26 +42,23 @@ export default function CartScreen() {
   const total = subtotal + tax + deliveryFee - discount;
 
   // ---- EMPTY CART UI
-  if (items.length === 0)
-    return (
-      <View
-        style={[
-          styles.emptyContainer,
-          { backgroundColor: isDark ? '#000' : '#fff' },
-        ]}
-      >
-          <AppHeader title="Home" />
-        <TouchableOpacity
-          style={styles.wishlistIcon}
-          onPress={() => navigation.navigate('Favorites')}
-        >
-          <Ionicons
-            name="heart-outline"
-            size={28}
-            color={isDark ? 'black' : '#111'}
-          />
-        </TouchableOpacity>
+if (items.length === 0) {
+  const insets = useSafeAreaInsets(); // 👈 add this here
 
+  return (
+    <View style={{ flex: 1, backgroundColor: isDark ? '#000' : '#fff' }}>
+      {/* 🔝 AppHeader now gets top safe padding */}
+      <View style={{ paddingTop: insets.top }}>
+        <AppHeader  />
+      </View>
+
+      {/* 🎯 empty UI centered below */}
+      <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20
+      }}>
         <View
           style={[
             styles.iconWrapper,
@@ -89,191 +86,192 @@ export default function CartScreen() {
           stylish finds.
         </Text>
 
-        <View style={styles.emptyButtons}>
-          <TouchableOpacity
-            style={[styles.btn, styles.btnPrimary]}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={styles.btnPrimaryText}>SHOP NOW</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.btn, styles.btnPrimary]}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Text style={styles.btnPrimaryText}>SHOP NOW</Text>
+        </TouchableOpacity>
       </View>
-    );
+    </View>
+  );
+}
+
 
   // Debug
 
   return (
-    <SafeAreaView>
- <AppHeader title="Home" />
+    <SafeAreaView >
+      <AppHeader />
       <ScrollView contentContainerStyle={styles.container}>
         {/* ---- CART ITEMS ---- */}
         <View style={styles.itemsContainer}>
-        {items.map((it) => {
-  const isBundle = !!it.bundle;
+          {items.map((it) => {
+            const isBundle = !!it.bundle;
 
-  // ---- IMAGE ----
-  const displayImage = isBundle
-    ? it.mainImage ||
-      it.bundleProducts?.[0]?.product?.images?.[0] ||
-      "https://via.placeholder.com/150"
-    : it.product?.images?.[0];
+            // ---- IMAGE ----
+            const displayImage = isBundle
+              ? it.mainImage ||
+              it.bundleProducts?.[0]?.product?.images?.[0] ||
+              "https://via.placeholder.com/150"
+              : it.product?.images?.[0];
 
-  // ---- TITLE ----
-  const displayTitle = isBundle ? it.bundle.title : it.product.title;
+            // ---- TITLE ----
+            const displayTitle = isBundle ? it.bundle.title : it.product.title;
 
-  // ---- PRICE ----
-  const displayPrice = isBundle ? it.bundle.price : it.product.price;
+            // ---- PRICE ----
+            const displayPrice = isBundle ? it.bundle.price : it.product.price;
 
-  // ---- REMOVE KEY ----
-  const removeId = isBundle ? it.bundle._id : it.product._id;
+            // ---- REMOVE KEY ----
+            const removeId = isBundle ? it.bundle._id : it.product._id;
 
-  return (
-    <View key={it._id} style={styles.itemCard}>
+            return (
+              <View key={it._id} style={styles.itemCard}>
 
-      {/* IMAGE */}
-      <Image source={{ uri: displayImage }} style={styles.itemImage} />
+                {/* IMAGE */}
+                <Image source={{ uri: displayImage }} style={styles.itemImage} />
 
-      <View style={styles.itemInfo}>
-        
-        {/* TITLE + REMOVE */}
-        <View style={styles.itemHeader}>
-          <Text style={styles.itemTitle} numberOfLines={1}>
-            {displayTitle}
-          </Text>
+                <View style={styles.itemInfo}>
 
-          <TouchableOpacity onPress={() =>  remove(
-      removeId,
-      isBundle ? null : it.size,
-      isBundle ? true : false
-    )}>
-            <Ionicons name="close" size={20} color="#999" />
-          </TouchableOpacity>
-        </View>
+                  {/* TITLE + REMOVE */}
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemTitle} numberOfLines={1}>
+                      {displayTitle}
+                    </Text>
 
-        {/* 🔥 BUNDLE SUB-ITEMS */}
-       {isBundle && (
-  <View style={{ marginTop: 6 }}>
-    {it.bundleProducts.map((bp) => {
-      const img =
-        bp.product?.images?.[0] ||
-        "https://via.placeholder.com/80";
+                    <TouchableOpacity onPress={() => remove(
+                      removeId,
+                      isBundle ? null : it.size,
+                      isBundle ? true : false
+                    )}>
+                      <Ionicons name="close" size={20} color="#999" />
+                    </TouchableOpacity>
+                  </View>
 
-      return (
-        <View
-          key={bp.product._id}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: 4,
-            gap: 10,
-          }}
-        >
-          {/* SUB-ITEM IMAGE */}
-          <Image
-            source={{ uri: img }}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 6,
-              backgroundColor: "#f0f0f0",
-            }}
-          />
+                  {/* 🔥 BUNDLE SUB-ITEMS */}
+                  {isBundle && (
+                    <View style={{ marginTop: 6 }}>
+                      {it.bundleProducts.map((bp) => {
+                        const img =
+                          bp.product?.images?.[0] ||
+                          "https://via.placeholder.com/80";
 
-          {/* TITLE + SIZE */}
-          <View style={{ flex: 1 }}>
-            <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: "600" }}>
-              {bp.product.title}
-            </Text>
-            <Text style={{ fontSize: 12, color: "#555" }}>
-              Size: {bp.size}
-            </Text>
-          </View>
-        </View>
-      );
-    })}
-  </View>
-)}
+                        return (
+                          <View
+                            key={bp.product._id}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginVertical: 4,
+                              gap: 10,
+                            }}
+                          >
+                            {/* SUB-ITEM IMAGE */}
+                            <Image
+                              source={{ uri: img }}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 6,
+                                backgroundColor: "#f0f0f0",
+                              }}
+                            />
 
-
-        {/* Product size (normal item only) */}
-        {!isBundle && it.size && (
-          <View style={styles.variants}>
-            <Text style={styles.variant}>Size: {it.size}</Text>
-          </View>
-        )}
-
-        {/* QUANTITY CONTROLS */}
-        {/* Quantity */}
-<View style={styles.qtyContainer}>
-  <Text style={{ fontWeight: "500" }}>Qty:</Text>
-
-  <View style={styles.qtyControls}>
-    {/* ➖ DECREASE */}
-  <TouchableOpacity
-  onPress={() => {
-    if (it.quantity === 1) {
-
-      isBundle
-        ? remove(it.bundle._id, null, true) 
-        : remove(it.product._id, it.size);
-    } else {
-      update(
-        isBundle ? it.bundle._id : it.product._id,
-        it.quantity - 1,
-        it.size,
-        isBundle
-      );
-    }
-  }}
-  style={styles.qtyBtn}
->
-  <Text style={styles.qtyBtnText}>-</Text>
-</TouchableOpacity>
+                            {/* TITLE + SIZE */}
+                            <View style={{ flex: 1 }}>
+                              <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: "600" }}>
+                                {bp.product.title}
+                              </Text>
+                              <Text style={{ fontSize: 12, color: "#555" }}>
+                                Size: {bp.size}
+                              </Text>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
 
 
-    {/* 🔢 INPUT FIELD */}
-    <TextInput
-      value={String(it.quantity)}
-      keyboardType="numeric"
-      onChangeText={(val) => {
-        const num = Number(val);
-        if (!num || num <= 0) return; // prevent 0 or blank
-        update(
-          isBundle ? it.bundle._id : it.product._id,
-          num,
-          it.size,
-          isBundle
-        );
-      }}
-      style={styles.qtyInput}
-    />
+                  {/* Product size (normal item only) */}
+                  {!isBundle && it.size && (
+                    <View style={styles.variants}>
+                      <Text style={styles.variant}>Size: {it.size}</Text>
+                    </View>
+                  )}
 
-    {/* ➕ INCREASE */}
-    <TouchableOpacity
-      onPress={() =>
-        update(
-          isBundle ? it.bundle._id : it.product._id,
-          it.quantity + 1,
-          it.size,
-          isBundle
-        )
-      }
-      style={styles.qtyBtn}
-    >
-      <Text style={styles.qtyBtnText}>+</Text>
-    </TouchableOpacity>
-  </View>
-</View>
+                  {/* QUANTITY CONTROLS */}
+                  {/* Quantity */}
+                  <View style={styles.qtyContainer}>
+                    <Text style={{ fontWeight: "500" }}>Qty:</Text>
+
+                    <View style={styles.qtyControls}>
+                      {/* ➖ DECREASE */}
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (it.quantity === 1) {
+
+                            isBundle
+                              ? remove(it.bundle._id, null, true)
+                              : remove(it.product._id, it.size);
+                          } else {
+                            update(
+                              isBundle ? it.bundle._id : it.product._id,
+                              it.quantity - 1,
+                              it.size,
+                              isBundle
+                            );
+                          }
+                        }}
+                        style={styles.qtyBtn}
+                      >
+                        <Text style={styles.qtyBtnText}>-</Text>
+                      </TouchableOpacity>
 
 
-        {/* PRICE */}
-        <Text style={styles.itemPrice}>
-          ₹ {(displayPrice * it.quantity).toLocaleString()}
-        </Text>
-      </View>
-    </View>
-  );
-})}
+                      {/* 🔢 INPUT FIELD */}
+                      <TextInput
+                        value={String(it.quantity)}
+                        keyboardType="numeric"
+                        onChangeText={(val) => {
+                          const num = Number(val);
+                          if (!num || num <= 0) return; // prevent 0 or blank
+                          update(
+                            isBundle ? it.bundle._id : it.product._id,
+                            num,
+                            it.size,
+                            isBundle
+                          );
+                        }}
+                        style={styles.qtyInput}
+                      />
+
+                      {/* ➕ INCREASE */}
+                      <TouchableOpacity
+                        onPress={() =>
+                          update(
+                            isBundle ? it.bundle._id : it.product._id,
+                            it.quantity + 1,
+                            it.size,
+                            isBundle
+                          )
+                        }
+                        style={styles.qtyBtn}
+                      >
+                        <Text style={styles.qtyBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+
+                  {/* PRICE */}
+                  <Text style={styles.itemPrice}>
+                    ₹ {(displayPrice * it.quantity).toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
 
         </View>
 
@@ -346,7 +344,7 @@ export default function CartScreen() {
 // ---- STYLES (UNCHANGED) ----
 //
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 16, backgroundColor: "#fff",paddingBottom:200 },
+  container: { paddingHorizontal: 16, backgroundColor: "#fff", paddingBottom: 200 },
 
   emptyContainer: {
     flex: 1,

@@ -279,7 +279,6 @@ export default function HomeScreen({ navigation }) {
       <Text style={styles.emptyText}>No new arrivals 🚫</Text>
     </View>
   );
-  console.log('bundleProducts', bundleProducts);
   return (
     
     <View style={styles.container}>
