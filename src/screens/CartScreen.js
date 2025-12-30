@@ -17,15 +17,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from '../context/AuthContext';
 const { width } = Dimensions.get("window");
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets,SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from "../components/AppHeader";
 
 export default function CartScreen() {
   const { user } = useAuth();
-  const theme = useColorScheme();
-  const isDark = theme === 'dark';
-  const navigation = useNavigation();
   const { items, update, remove } = useCart();
+  const theme = useColorScheme();
+  const navigation = useNavigation();
+  const isDark = theme === 'dark';
   const [coupon, setCoupon] = useState("");
 
   // ---- FIXED SUBTOTAL (handles bundle + single products)

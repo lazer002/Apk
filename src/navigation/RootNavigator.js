@@ -17,6 +17,9 @@ import ProductListingScreen from '../screens/ProductListingScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import BundleListingScreen from '../screens/BundleListingScreen';
 import OrderSuccessScreen from '../screens/OrderSuccessScreen';
+import OrdersScreen from '../screens/OrdersScreen';
+import TrackOrderScreen from '../screens/TrackOrderScreen';
+import ReturnScreen from '../screens/ReturnScreen';
 
 import TabsNavigator from './TabsNavigator';
 import ScreenWrapper from '../components/ScreenWrapper';
@@ -53,9 +56,14 @@ export default function RootNavigator() {
       {/* 📌 Listing pages (VERY IMPORTANT to be here) */}
       <Stack.Screen name="BundleListingScreen" component={BundleListingScreen} />
       <Stack.Screen name="ProductListingScreen" component={ProductListingScreen} />
+      <Stack.Screen name="OrdersScreen" component={OrdersScreen} />
+      <Stack.Screen name="TrackOrderScreen" component={TrackOrderScreen} />
+      <Stack.Screen name="ReturnScreen" component={ReturnScreen} />
+      
 
       {/* 🔎 Search */}
       <Stack.Screen name="SearchScreen" component={SearchScreen} />
+
 
       {/* 📦 Product detail wrappers */}
       <Stack.Screen name="ProductScreen">

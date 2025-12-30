@@ -260,7 +260,7 @@ return (
 
     </View>
   </TouchableWithoutFeedback>
-);
+);  
 
 
 }

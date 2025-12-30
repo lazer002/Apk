@@ -118,6 +118,7 @@ export default function CheckoutScreen({ navigation }) {
         await clearCart();
         navigation.replace("OrderSuccess", {
           orderNumber: res.data.orderNumber,
+          email
         });
       }
     } catch (err) {

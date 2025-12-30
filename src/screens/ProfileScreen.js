@@ -1,170 +1,189 @@
-// src/screens/ProfileScreen.js
-import React from "react";
+import React, { useContext } from "react";
 import {
   View,
   Text,
-  ScrollView,
-  Image,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
   Dimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { AuthContext } from "../context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
-export default function ProfileScreen() {
-  const navigation = useNavigation();
+export default function ProfileScreen({ navigation }) {
+  const { user, logout } = useContext(AuthContext);
 
-  // Dummy data
-  const user = {
-    name: "Ajit Kumar",
-    email: "ajit@example.com",
-    avatar: "https://i.pravatar.cc/150?img=12",
-  };
-
-  const addresses = [
-    { id: 1, label: "Home", details: "123, ABC Street, Delhi" },
-    { id: 2, label: "Work", details: "456, XYZ Road, Delhi" },
-  ];
-
-  const orders = [
-    { id: 1, label: "Order #1001", date: "Oct 1, 2025", total: 2500 },
-    { id: 2, label: "Order #1002", date: "Sep 28, 2025", total: 4500 },
-  ];
+  const go = (screen) => navigation.navigate(screen);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* User Info */}
-      <View style={styles.userCard}>
-        <Image source={{ uri: user.avatar }} style={styles.avatar} />
-        <View style={{ flex: 1, marginLeft: 16 }}>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userEmail}>{user.email}</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("EditProfile")}
-          style={styles.editBtn}
-        >
-          <Text style={{ color: "#fff" }}>Edit</Text>
-        </TouchableOpacity>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* --- HEADER SECTION --- */}
+      <View style={styles.headerBox}>
+        <Text style={styles.title}>
+          {user ? `Hey, ${user.firstName || "User"}` : "Welcome"}
+        </Text>
+        <Text style={styles.subTitle}>
+          {user
+            ? "Manage your account & orders"
+            : "Track orders or sign in to access your account"}
+        </Text>
       </View>
 
-      {/* Addresses */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Addresses</Text>
-        {addresses.map((addr) => (
-          <View key={addr.id} style={styles.addressCard}>
-            <Text style={styles.addressLabel}>{addr.label}</Text>
-            <Text style={styles.addressDetails}>{addr.details}</Text>
-            <TouchableOpacity
-              style={styles.editAddressBtn}
-              onPress={() => navigation.navigate("EditAddress", { id: addr.id })}
-            >
-              <Text style={{ color: "#111", fontWeight: "bold" }}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-        <TouchableOpacity
-          style={styles.addAddressBtn}
-          onPress={() => navigation.navigate("AddAddress")}
-        >
-          <Ionicons name="add-circle-outline" size={20} color="#111" />
-          <Text style={{ marginLeft: 6 }}>Add New Address</Text>
-        </TouchableOpacity>
-      </View>
+            {/* --- ACCOUNT SECTION --- */}
+      <Section title="Account">
+        {user ? (
+          <>
+            <Item icon="person-outline" label="Profile Details" />
+            <Item icon="heart-outline" label="Wishlist" onPress={() => go("FavoritesScreen")} />
+            <Item icon="map-outline" label="Saved Addresses" />
+            <Item icon="card-outline" label="Payments" />
+          </>
+        ) : (
+          <Item icon="log-in-outline" label="Sign in / Create Account" onPress={() => go("Auth")} />
+        )}
+      </Section>
 
-      {/* Orders */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Orders</Text>
-        {orders.map((order) => (
-          <TouchableOpacity
-            key={order.id}
-            style={styles.orderCard}
-            onPress={() => navigation.navigate("OrderDetails", { id: order.id })}
-          >
-            <Text style={styles.orderLabel}>{order.label}</Text>
-            <Text style={styles.orderDate}>{order.date}</Text>
-            <Text style={styles.orderTotal}>₹ {order.total.toLocaleString()}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* --- ORDER SECTION --- */}
+      <Section title="Orders">
+        <Item icon="cube-outline" label="My Orders" onPress={() => go("OrdersScreen")} />
+        <Item icon="location-outline" label="Track Order" onPress={() => go("TrackOrderScreen")} />
+        <Item icon="location-outline" label="Return/Exchange" onPress={() => go("ReturnScreen")} />
+      </Section>
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={() => {/* handle logout */}}>
-        <Text style={{ color: "#fff", fontWeight: "bold" }}>Logout</Text>
-      </TouchableOpacity>
+
+
+      {/* --- SHOP SECTION --- */}
+      {user && (
+        <Section title="Shopping">
+          <Item icon="pricetags-outline" label="Coupons & Offers" />
+          <Item icon="bookmark-outline" label="Saved for Later" />
+        </Section>
+      )}
+
+      {/* --- SUPPORT SECTION --- */}
+      <Section title="Support">
+        <Item icon="help-circle-outline" label="Help Center" />
+        <Item icon="chatbubble-ellipses-outline" label="Contact Support" />
+        <Item icon="information-circle-outline" label="Terms & Policies" />
+      </Section>
+
+      {/* --- FOOTER ACTIONS --- */}
+      <View style={{ height: 10 }} />
+      {user ? (
+        <FooterButton label="Logout" icon="log-out-outline" onPress={logout} />
+      ) : (
+        <FooterButton label="Login / Signup" icon="log-in-outline" onPress={() => go("Auth")} />
+      )}
+      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
 
+/* --- REUSABLE COMPONENTS --- */
+
+const Section = ({ title, children }) => (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={styles.card}>{children}</View>
+  </View>
+);
+
+const Item = ({ icon, label, onPress }) => (
+  <TouchableOpacity style={styles.row} activeOpacity={0.6} onPress={onPress}>
+    <Ionicons name={icon} size={22} color="#111" />
+    <Text style={styles.rowLabel}>{label}</Text>
+    <MaterialIcons name="keyboard-arrow-right" size={22} color="#111" />
+  </TouchableOpacity>
+);
+
+const FooterButton = ({ label, icon, onPress }) => (
+  <TouchableOpacity style={styles.footerBtn} activeOpacity={0.7} onPress={onPress}>
+    <Ionicons name={icon} size={20} color="#fff" style={{ marginRight: 6 }} />
+    <Text style={styles.footerBtnText}>{label}</Text>
+  </TouchableOpacity>
+);
+
+/* --- STYLES --- */
+
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: "#f2f2f2" },
-
-  userCard: {
-    flexDirection: "row",
+  container: {
+    flex: 1,
     backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  avatar: { width: 70, height: 70, borderRadius: 35 },
-  userName: { fontSize: 18, fontWeight: "bold" },
-  userEmail: { fontSize: 14, color: "#555" },
-  editBtn: {
-    backgroundColor: "#111",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingHorizontal: 20,
   },
 
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 8 },
-
-  addressCard: {
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    position: "relative",
+  /* header */
+  headerBox: {
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  addressLabel: { fontWeight: "600", marginBottom: 4 },
-  addressDetails: { color: "#555" },
-  editAddressBtn: {
-    position: "absolute",
-    right: 12,
-    top: 12,
-    padding: 4,
+  title: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: "#111",
   },
-  addAddressBtn: {
-    flexDirection: "row",
-    alignItems: "center",
+  subTitle: {
+    fontSize: 14,
+    opacity: 0.6,
     marginTop: 6,
+    maxWidth: width * 0.8,
   },
 
-  orderCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  /* generic section */
+  section: {
+    marginTop: 25,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#111",
+    marginBottom: 10,
+    opacity: 0.6,
+  },
+
+  card: {
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
+    borderRadius: 16,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 3,
   },
-  orderLabel: { fontWeight: "600" },
-  orderDate: { color: "#555" },
-  orderTotal: { fontWeight: "bold" },
 
-  logoutBtn: {
-    backgroundColor: "#111",
-    paddingVertical: 14,
-    justifyContent: "center",
+  /* row */
+  row: {
+    flexDirection: "row",
     alignItems: "center",
-    borderRadius: 8,
-    marginTop: 16,
-    marginBottom: 32,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f2f2f2",
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
+    marginLeft: 12,
+    color: "#111",
+  },
+
+  /* footer button */
+  footerBtn: {
+    backgroundColor: "#111",
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    marginTop: 10,
+  },
+  footerBtnText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 15,
   },
 });
