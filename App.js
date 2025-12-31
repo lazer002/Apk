@@ -12,7 +12,7 @@ import { WishlistProvider } from './src/context/WishlistContext';
 import { FilterProvider } from './src/context/FilterContext';
 
 import RootNavigator from './src/navigation/RootNavigator';
-
+import "./global.css";
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

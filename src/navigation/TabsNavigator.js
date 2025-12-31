@@ -6,10 +6,18 @@ import {
   StyleSheet,
   Pressable,
   Platform,
-  TouchableWithoutFeedback 
+  TouchableWithoutFeedback
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Package,
+  Shirt,
+  House,
+  Search,
+  Heart,
+  User2,
+} from "lucide-react-native";
+
 import { useNavigation } from "@react-navigation/native";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -31,7 +39,7 @@ export default function TabsNavigator() {
   const navigation = useNavigation();
 
   // current icon showing NEXT page user will go after tap
-  const [modeIcon, setModeIcon] = useState("cube-outline");
+  const [modeIcon, setModeIcon] = useState("shirt");
 
   // animations
   const flip = useSharedValue(0);
@@ -60,7 +68,7 @@ export default function TabsNavigator() {
     opacity: wingsOpen.value,
     transform: [
       { translateX: wingLeft.value * wingsOpen.value },
-      { translateY: -38 * wingsOpen.value },
+      { translateY: -58 * wingsOpen.value },
     ],
   }));
 
@@ -68,7 +76,7 @@ export default function TabsNavigator() {
     opacity: wingsOpen.value,
     transform: [
       { translateX: wingRight.value * wingsOpen.value },
-      { translateY: -38 * wingsOpen.value },
+      { translateY: -58 * wingsOpen.value },
     ],
   }));
 
@@ -128,15 +136,15 @@ export default function TabsNavigator() {
       return;
     }
 
-    if (modeIcon === "shirt-outline") {
+    if (modeIcon === "shirt") {
       runFlip(() => {
         navigation.navigate("ProductListingScreen");
-        fadeIconChange("cube-outline");
+        fadeIconChange("package"); // switch to package icon
       });
     } else {
       runFlip(() => {
         navigation.navigate("BundleListingScreen");
-        fadeIconChange("shirt-outline");
+        fadeIconChange("shirt"); // switch back to shirt icon
       });
     }
   };
@@ -152,115 +160,207 @@ export default function TabsNavigator() {
     }
   };
 
-return (
-  <TouchableWithoutFeedback
-    onPress={(e) => {
-      // if wings closed → do nothing
-      if (wingsOpen.value === 0) return;
+  return (
+    <TouchableWithoutFeedback
+      onPress={(e) => {
+        // if wings closed → do nothing
+        if (wingsOpen.value === 0) return;
 
-      // get tap location
-      const { locationX, locationY } = e.nativeEvent;
+        // get tap location
+        const { locationX, locationY } = e.nativeEvent;
 
-      // detect tap inside FAB area (do NOT close wings)
-      if (locationY > 520 && locationY < 620 && locationX > 140 && locationX < 260) {
-        return;
-      }
+        // detect tap inside FAB area (do NOT close wings)
+        if (locationY > 520 && locationY < 620 && locationX > 140 && locationX < 260) {
+          return;
+        }
 
-      // detect tap inside left wing area
-      if (locationY > 470 && locationY < 570 && locationX > 90 && locationX < 170) {
-        return;
-      }
+        // detect tap inside left wing area
+        if (locationY > 470 && locationY < 570 && locationX > 90 && locationX < 170) {
+          return;
+        }
 
-      // detect tap inside right wing area
-      if (locationY > 470 && locationY < 570 && locationX > 230 && locationX < 310) {
-        return;
-      }
+        // detect tap inside right wing area
+        if (locationY > 470 && locationY < 570 && locationX > 230 && locationX < 310) {
+          return;
+        }
 
-      // otherwise → close wings
-      closeWings();
-    }}
-  >
-    <View style={{ flex: 1 }}>
-      {/* ===== YOUR EXISTING JSX BELOW IS UNCHANGED ===== */}
-
-      <Tabs.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarShowLabel: false,
-          tabBarStyle: styles.tabBar,
-        }}
-      >
-        <Tabs.Screen name="Home">
-          {(props) => (
-            <ScreenWrapper>
-              <HomeScreen {...props} />
-            </ScreenWrapper>
-          )}
-        </Tabs.Screen>
-
-        <Tabs.Screen name="Profile">
-          {(props) => (
-            <ScreenWrapper>
-              <ProfileScreen {...props} />
-            </ScreenWrapper>
-          )}
-        </Tabs.Screen>
-      </Tabs.Navigator>
-
-      <Animated.View
-        pointerEvents={wingsOpen.value === 1 ? "auto" : "none"}
-        style={[StyleSheet.absoluteFill, backdropAnim]}
-      >
-        <BlurView intensity={40} tint="dark" style={{ flex: 1 }} />
-      </Animated.View>
-
-      {/* FAB + Wings stay same */}
-  <View style={styles.centerContainer} pointerEvents="box-none">
-
-  {/* LEFT WING */}
-  <Animated.View style={[styles.wing, wingLeftAnim]}>
-    <TouchableOpacity
-      onPress={() => {
+        // otherwise → close wings
         closeWings();
-        fadeIconChange("cube-outline");
-        navigation.navigate("BundleListingScreen");
       }}
     >
-      <Ionicons name="cube" size={22} color="#000" />
-    </TouchableOpacity>
-  </Animated.View>
+      <View style={{ flex: 1 }}>
 
-  {/* RIGHT WING */}
-  <Animated.View style={[styles.wing, wingRightAnim]}>
-    <TouchableOpacity
-      onPress={() => {
-        closeWings();
-        fadeIconChange("shirt-outline");
-        navigation.navigate("ProductListingScreen");
-      }}
-    >
-      <Ionicons name="shirt" size={22} color="#000" />
-    </TouchableOpacity>
-  </Animated.View>
+        <Tabs.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarShowLabel: false,
+            tabBarStyle: styles.tabBar,
+          }}
+        >
+          <Tabs.Screen
+            name="Home"
+            options={{
+              tabBarIcon: ({ focused }) => (
+                <House
+                  size={24}
+                  strokeWidth={focused ? 3 : 2}
+                  color={focused ? "#000" : "#777"}
+                />
+              ),
+            }}
+          >
+            {(props) => (
+              <ScreenWrapper>
+                <HomeScreen {...props} />
+              </ScreenWrapper>
+            )}
+          </Tabs.Screen>
 
-  {/* MAIN FAB */}
-  <TouchableOpacity
-    activeOpacity={1}
-    onPress={handleTap}
-    onLongPress={handleLongPress}
-  >
-    <Animated.View style={[styles.fab, pulseAnim, flipAnim]}>
-      <Animated.View style={crossfadeAnim}>
-        <Ionicons name={modeIcon} size={32} color="#000" />
-      </Animated.View>
-    </Animated.View>
-  </TouchableOpacity>
+          <Tabs.Screen
+            name="ProfileScreen"
+            options={{
+              tabBarIcon: ({ focused }) => (
+                <User2
+                  size={24}
+                  strokeWidth={focused ? 3 : 2}
+                  color={focused ? "#000" : "#777"}
+                />
+              ),
+            }}
+          >
+            {(props) => (
+              <ScreenWrapper>
+                <ProfileScreen {...props} />
+              </ScreenWrapper>
+            )}
+          </Tabs.Screen>
 
-</View>
+        </Tabs.Navigator>
+        <View
+          style={{
+            position: "absolute",
+            bottom: "5%",
+            left: 0,
+            right: 0,
+            alignItems: "center",
+            pointerEvents: "box-none",
+          }}
+        >
+          {/* main glass bar background */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              paddingHorizontal: 25,
+              paddingVertical: 14,
+              width: "78%",
+              borderRadius: 40,
+              backgroundColor: "rgba(255,255,255,0.12)",
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.25)",
+              backdropFilter: "blur(14px)",     // web
+              backdropBlurRadius: 14,           // native
+            }}
+          >
+            {/* --- HOME white circle button --- */}
+            <TouchableOpacity onPress={() => navigation.navigate("Tabs", { screen: "Home" })}>
+              <View
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: "#FFFFFF",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "rgba(0,0,0,0.06)",
+                }}
+              >
+                <House size={26} strokeWidth={2.6} color="#000" />
+              </View>
+            </TouchableOpacity>
 
-    </View>
-  </TouchableWithoutFeedback>
-);  
+            {/* placeholder to keep gap for FAB */}
+            <View style={{ width: 50 }} />
+
+            {/* --- PROFILE white circle button --- */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Tabs", { screen: "ProfileScreen" })}
+            >
+              <View
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: "#FFFFFF",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "rgba(0,0,0,0.06)",
+                }}
+              >
+                <User2 size={26} strokeWidth={2.6} color="#000" />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* --- lifted FAB --- */}
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={handleTap}
+            onLongPress={handleLongPress}
+            style={{
+              position: "absolute",
+              top: -42,          // <— lifted look
+            }}
+          >
+            <Animated.View style={[styles.fab, pulseAnim, flipAnim]}>
+              <Animated.View style={crossfadeAnim}>
+                {modeIcon === "package" ? (
+                  <Package size={28} strokeWidth={2.6} color="#000" />
+                ) : (
+                  <Shirt size={28} strokeWidth={2.6} color="#000" />
+                )}
+              </Animated.View>
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
+
+        {/* FAB + Wings stay same */}
+        <View style={styles.centerContainer} pointerEvents="box-none">
+
+          {/* LEFT WING */}
+          <Animated.View style={[styles.wing, wingLeftAnim]}>
+            <TouchableOpacity
+              onPress={() => {
+                closeWings();
+                fadeIconChange("package"); // fixed
+                navigation.navigate("BundleListingScreen");
+              }}
+            >
+              <Package size={26} strokeWidth={2.4} color="#000" />
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* RIGHT WING */}
+          <Animated.View style={[styles.wing, wingRightAnim]}>
+            <TouchableOpacity
+              onPress={() => {
+                closeWings();
+                fadeIconChange("shirt"); // fixed
+                navigation.navigate("ProductListingScreen");
+              }}
+            >
+              <Shirt size={26} strokeWidth={2.4} color="#000" />
+            </TouchableOpacity>
+          </Animated.View>
+
+
+        </View>
+
+      </View>
+    </TouchableWithoutFeedback>
+  );
 
 
 }
@@ -270,21 +370,22 @@ return (
 const styles = StyleSheet.create({
   tabBar: {
     position: "absolute",
-    bottom: "5%",
+    bottom: "15%",
     left: 20,
     right: 20,
     height: 68,
     borderRadius: 30,
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
     borderTopWidth: 0,
     elevation: 6,
+    opacity: 0, // hide default tab bar
   },
 
   centerContainer: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: "5%",
+    bottom: "15%",
     alignItems: "center",
   },
 
@@ -304,6 +405,7 @@ const styles = StyleSheet.create({
 
   wing: {
     position: "absolute",
+    bottom: "35%",
     width: 52,
     height: 52,
     borderRadius: 26,
@@ -311,6 +413,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
+
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 8,
